@@ -292,10 +292,17 @@ object MoondropController {
     }
 
     /** 带上设备身份，接收方靠 MAC 判断「是不是当前这台」。 */
-    private fun Intent.withDevice(): Intent = apply {
-        putExtra(HyperPodsAction.EXTRA_MAC, device?.address)
-        putExtra(HyperPodsAction.EXTRA_DEVICE_NAME, device?.name)
-        putExtra(HyperPodsAction.EXTRA_DEVICE, device)
+    /**
+     * 带上设备身份，接收方靠 MAC 判断「是不是当前这台」。
+     *
+     * [gone] 只给断连路径用：断开时 `device` 已被清空，必须显式传入断开前的那台，
+     * 否则广播里三个 extra 全是 null，通知层就不知道要撤哪条通知（见 [publishDisconnected]）。
+     */
+    private fun Intent.withDevice(gone: BluetoothDevice? = null): Intent = apply {
+        val d = gone ?: device
+        putExtra(HyperPodsAction.EXTRA_MAC, d?.address)
+        putExtra(HyperPodsAction.EXTRA_DEVICE_NAME, d?.name)
+        putExtra(HyperPodsAction.EXTRA_DEVICE, d)
     }
 
     /**
@@ -323,9 +330,18 @@ object MoondropController {
         publishAnc()
     }
 
-    private fun publishDisconnected() {
-        CONSUMERS.forEach { sendTo(it, HyperPodsAction.PODS_DISCONNECTED) { i -> i.withDevice() } }
-        sendTo(PKG_XIAOMI_BLUETOOTH, HyperPodsAction.CANCEL_PODS_NOTIFICATION) { i -> i.withDevice() }
+    /**
+     * 断连广播。
+     *
+     * ⚠ 必须用**断开前**抓下来的 [gone]：调用方 [disconnectInternal] 在发广播之前就把
+     * `device` 清空了。这里若再读 `device`，广播里的 EXTRA_DEVICE / EXTRA_MAC 全是 null ——
+     * 通知层收到 CANCEL_PODS_NOTIFICATION 后会因为 `device == null` 跳过撤销，
+     * 表现就是「蓝牙已经断了，通知栏那条 HyperPods 通知还挂着」（用户报过这个 bug）。
+     * 应用侧同理：拿不到 MAC 就不知道该把哪台耳机的界面收掉。
+     */
+    private fun publishDisconnected(gone: BluetoothDevice?) {
+        CONSUMERS.forEach { sendTo(it, HyperPodsAction.PODS_DISCONNECTED) { i -> i.withDevice(gone) } }
+        sendTo(PKG_XIAOMI_BLUETOOTH, HyperPodsAction.CANCEL_PODS_NOTIFICATION) { i -> i.withDevice(gone) }
     }
 
     private fun publishBattery() {
@@ -551,6 +567,8 @@ object MoondropController {
     fun disconnect() = disconnectInternal(notify = true)
 
     private fun disconnectInternal(notify: Boolean) {
+        // 先记住是哪台：下面会把 device 清空，而断连广播（含撤销通知）必须带上它
+        val gone = device
         connected = false
         pollJob?.cancel(); pollJob = null
         readerJob?.cancel(); readerJob = null
@@ -571,7 +589,7 @@ object MoondropController {
         }
         // 乐观更新的回退基线同样只在本会话内有效
         lhdcConfirmed = null
-        if (notify) publishDisconnected()
+        if (notify) publishDisconnected(gone)
     }
     // ---- BLE GATT
     private val gattCallback = object : BluetoothGattCallback() {

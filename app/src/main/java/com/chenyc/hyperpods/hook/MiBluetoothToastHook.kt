@@ -231,12 +231,21 @@ object MiBluetoothToastHook : HookContext() {
             }
         }
 
-        fun cancelNotification(bluetoothDevice: BluetoothDevice, context: Context) {
+        /**
+         * 撤掉本模块发的耳机通知（tag = `BTHeadset<MAC>`，id = 10003）。
+         *
+         * [bluetoothDevice] 允许为 null（断连时控制器已把 `device` 清空）：
+         * 只要 [mac] 还在，用 MAC 拼 tag 一样能撤。两个都没有就跳过并记一条日志 ——
+         * 静默跳过正是「通知撤不掉」这个 bug 的原始形态，别再退回去。
+         */
+        fun cancelNotification(bluetoothDevice: BluetoothDevice?, context: Context, mac: String? = null) {
             try {
-                val address = bluetoothDevice.address
+                val address = bluetoothDevice?.address?.takeIf { it.isNotEmpty() } ?: mac.orEmpty()
                 if (address.isNotEmpty()) {
                     val notificationManager = context.getSystemService("notification") as NotificationManager
                     notificationManager.cancelAsUser("BTHeadset$address", 10003, SystemApisUtils.getUserAllUserHandle())
+                } else {
+                    Log.w("HyperPods", "cancelNotification: neither device nor mac, skip")
                 }
             } catch (e: Exception) {
                 Log.e("HyperPods", "Failed to cancel Pod Notification!", e)
@@ -300,7 +309,9 @@ object MiBluetoothToastHook : HookContext() {
                                 val device = p1.getParcelableExtra(
                                     HyperPodsAction.EXTRA_DEVICE, BluetoothDevice::class.java
                                 )
-                                if (device != null) cancelNotification(device, context)
+                                // EXTRA_DEVICE 可能为空（断连时控制器已把 device 清空），
+                                // 所以同时取 EXTRA_MAC —— 通知的 tag 就是 BTHeadset<MAC>。
+                                cancelNotification(device, context, p1.getStringExtra(HyperPodsAction.EXTRA_MAC))
                                 MiuiStrongToastUtil.hideOfficialToast(context)
                                 lastOfficialIslandShape = null
                             } else if (p1?.action == HyperPodsAction.ACTION_PODS_ANC_CHANGED) {
