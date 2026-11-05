@@ -201,6 +201,20 @@ object MoondropModelRegistry {
         AncPathKind.AUDIO_CURATION,
     )
 
+    /**
+     * 知更鸟 ROBIN：只有两档（降噪 / 透传）。
+     *
+     * 设备码：UI[降噪, 透传] → dev [1, 2]；回读 dev 1→0 / 2→1（其余返回 -1 = 未知）。
+     * 来源：FxxkMoondrop issue #12 真机日志实测（该机型只有这两档，关闭/抗风档不存在），
+     * 路径固定走 AudioCuration。
+     */
+    private fun ancRobin() = AncProfile(
+        listOf(AncMode.NOISE_CANCELLATION, AncMode.TRANSPARENCY),
+        intArrayOf(1, 2),
+        intArrayOf(-1, 0, 1),
+        AncPathKind.AUDIO_CURATION,
+    )
+
     /** 布丁 PUDDING 五档：UI[关,降,透,抗,自适应] → dev [0,4,2,3,1]，走 ANC_V2 恒等读回。 */
     private fun ancPudding() = AncProfile(
         ANC_5,
@@ -379,9 +393,28 @@ object MoondropModelRegistry {
             chipset = "中科蓝讯 BT8952F（9ECA）",
             transports = listOf(PodTransport.BLE_GAIA, PodTransport.BLE_SRC_9ECA),
             verified = false,
-            anc = anc4Identity(),
+            // ⚠ FxxkMoondrop issue #12 真机实测：这副耳机**只有降噪/透传两档**。
+            //   之前用 anc4Identity() 会多出「关闭」「抗风」两个点了没反应的死按钮，
+            //   且「透传」点下去发 dev=3 设备不认（按钮形同摆设）。改用两档档案。
+            anc = ancRobin(),
             dc = GAIN_IDENTITY,
             features = FeatureProfile(),
+        ),
+        MoondropModel(
+            id = "ucts",
+            nameZh = "U.C.T.S（开放式）",
+            nameEn = "U.C.T.S",
+            aliases = listOf("U.C.T.S", "U.C.T.S.", "UCTS", "MD-OWS-014"),
+            chipset = "高通 QCC（GAIA）",
+            transports = listOf(PodTransport.BLE_GAIA),
+            verified = true,
+            // 硬件本身不含降噪：不给档案（null = 交给能力探测，探测不到就不出降噪行），
+            // 免得出现「点了没反应的降噪按钮」。
+            anc = null,
+            dc = NONE,
+            features = FeatureProfile(),
+            note = "✅ 实机验证（FxxkMoondrop issue #9）：识别 / 控制 / 左右耳电量 / 弹窗均正常；" +
+                "**硬件本身没有降噪**，降噪类功能不可用属预期而非缺陷。",
         ),
         MoondropModel(
             id = "alice",
