@@ -551,6 +551,8 @@ object MoondropController {
     // 连接
 
     fun connect(btDevice: BluetoothDevice, preferRfcomm: Boolean = false) {
+        // 官方云端目录：本进程只拉一次（24h 缓存）；失败不影响连接与控制
+        scope.launch { runCatching { MoondropCatalog.refresh() } }
         if (connected && device?.address == btDevice.address) return
         disconnectInternal(notify = false)
         device = btDevice

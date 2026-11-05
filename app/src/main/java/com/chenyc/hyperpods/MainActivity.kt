@@ -23,6 +23,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 官方云端机型目录（与官方 APP 同源）：后台拉一次，失败无副作用
+        Thread { runCatching { com.chenyc.hyperpods.pods.moondrop.MoondropCatalog.refresh() } }.start()
         super.onCreate(savedInstanceState)
 
         setContent {
