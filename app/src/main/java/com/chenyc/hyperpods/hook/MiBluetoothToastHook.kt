@@ -241,11 +241,23 @@ object MiBluetoothToastHook : HookContext() {
         fun cancelNotification(bluetoothDevice: BluetoothDevice?, context: Context, mac: String? = null) {
             try {
                 val address = bluetoothDevice?.address?.takeIf { it.isNotEmpty() } ?: mac.orEmpty()
+                val notificationManager = context.getSystemService("notification") as NotificationManager
                 if (address.isNotEmpty()) {
-                    val notificationManager = context.getSystemService("notification") as NotificationManager
                     notificationManager.cancelAsUser("BTHeadset$address", 10003, SystemApisUtils.getUserAllUserHandle())
                 } else {
-                    Log.w("HyperPods", "cancelNotification: neither device nor mac, skip")
+                    // 兜底：断连事件可能先于/晚于会话，控制器里已经没有 device，MAC 也拿不到。
+                    // 这时扫一遍**本进程**发出去的通知（都在 com.xiaomi.bluetooth 名下，
+                    // tag 统一是 BTHeadset<MAC> —— 与 MIUI 官方那条同款），把残留的全撤掉。
+                    // 只扫本进程自己发的，不碰别的应用；失败也不影响主流程。
+                    val stale = runCatching { notificationManager.activeNotifications }
+                        .getOrNull().orEmpty()
+                        .filter { it.tag?.startsWith("BTHeadset") == true }
+                    stale.forEach { n ->
+                        runCatching {
+                            notificationManager.cancelAsUser(n.tag, n.id, SystemApisUtils.getUserAllUserHandle())
+                        }
+                    }
+                    Log.w("HyperPods", "cancelNotification: no device/mac, swept ${stale.size} stale notification(s)")
                 }
             } catch (e: Exception) {
                 Log.e("HyperPods", "Failed to cancel Pod Notification!", e)
