@@ -572,17 +572,25 @@ object MoondropController {
     fun connect(btDevice: BluetoothDevice, preferRfcomm: Boolean = false) {
         // 新会话：重置回落标记
         rfcommFallbackTried = false
-        // 官方云端目录：本进程只拉一次（24h 缓存）；失败不影响连接与控制
-        scope.launch { runCatching { MoondropCatalog.refresh() } }
         if (connected && device?.address == btDevice.address) return
         disconnectInternal(notify = false)
         device = btDevice
+        // 先给一个安全默认值，真正的型号/线路在云端目录就绪后再定（见下面的 coroutine）
         model = MoondropModelRegistry.match(btDevice.name) ?: MoondropModelRegistry.FALLBACK
-        useRfcomm = preferRfcomm || model.transports.firstOrNull() == PodTransport.RFCOMM_GAIA
         framer.reset()
         batteryState.reset()
         capabilities = MoondropCapabilities()
         scope.launch {
+            // ⚠ 必须先拿官方云端配置（芯片族）再决定线路，否则第一次连接会退化成
+            //   FALLBACK 的 BLE 优先（布丁 → GATT status=147 → 只能靠回落）。
+            MoondropCatalog.ensureLoaded()
+            model = MoondropModelRegistry.match(btDevice.name) ?: MoondropModelRegistry.FALLBACK
+            useRfcomm = preferRfcomm || model.transports.firstOrNull() == PodTransport.RFCOMM_GAIA
+            Log.i(
+                TAG,
+                "connect ${btDevice.address}: model=${model.nameZh} " +
+                    "transports=${model.transports} useRfcomm=$useRfcomm",
+            )
             if (useRfcomm) connectRfcomm(btDevice) else connectGattInternal(btDevice)
         }
     }
