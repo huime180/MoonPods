@@ -393,19 +393,11 @@ private fun PopupContent(
         }
     }
 
-    // Timeout fallback: show dialog even if no response within 500ms
-    // Periodic refresh: poll earbuds every 15s while popup is open
+    // 一次性超时兜底：500ms 内没收到状态也把弹窗显示出来。
+    // 这里不再周期性轮询 —— 状态由模块主动广播，弹窗只在前台等一次。
     LaunchedEffect(Unit) {
         delay(500)
         if (!showDialog.value) showDialog.value = true
-
-        while (true) {
-            delay(15_000)
-            context.sendBroadcast(Intent(MoonPodsAction.ACTION_REFRESH_STATUS).apply {
-                setPackage("com.android.bluetooth")
-                addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
-            })
-        }
     }
 
     /** 水月雨：把选中的**档位下标**发回蓝牙进程（控制器按型号档案换算成设备码）。 */

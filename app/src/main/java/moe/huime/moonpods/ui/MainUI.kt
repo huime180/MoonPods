@@ -618,17 +618,6 @@ fun MainUI(
         }
     }
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            sendBluetoothModuleBroadcast(context, MoonPodsAction.ACTION_PODS_UI_INIT)
-
-            // 水月雨线也要问一次（同上）。
-            sendBluetoothModuleBroadcast(context, MoonPodsAction.UI_INIT)
-            sendBluetoothModuleBroadcast(context, MoonPodsAction.ACTION_REFRESH_STATUS)
-            delay(30_000L)
-        }
-    }
-
     LaunchedEffect(selectedTab, hookConnected.value) {
         sendBluetoothModuleBroadcast(context, MoonPodsAction.ACTION_PODS_UI_INIT)
 
@@ -640,12 +629,10 @@ fun MainUI(
         }
     }
 
+    // 蓝牙服务存活状态：只在收到心跳广播时评估，不做前台轮询
     LaunchedEffect(lastBluetoothServiceAliveMs) {
-        while (true) {
-            bluetoothServiceResponsive = lastBluetoothServiceAliveMs > 0L &&
-                    SystemClock.elapsedRealtime() - lastBluetoothServiceAliveMs <= 75_000L
-            delay(5_000L)
-        }
+        bluetoothServiceResponsive = lastBluetoothServiceAliveMs > 0L &&
+                SystemClock.elapsedRealtime() - lastBluetoothServiceAliveMs <= 75_000L
     }
 
     fun setAncMode(mode: NoiseControlMode) {
