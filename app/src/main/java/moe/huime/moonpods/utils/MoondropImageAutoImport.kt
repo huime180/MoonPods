@@ -111,9 +111,8 @@ object MoondropImageAutoImport {
         address: String,
         deviceName: String,
     ): List<EarphonePref>? {
-        // 品牌判定只此一条路：水月雨型号档案是白名单匹配，OPPO 才是名字兜底；
-        // 认不出来（null）就不当水月雨处理 —— 宁可没有图，也不给 OPPO 设备导水月雨的图
-        val brand = runCatching { PodCatalog.brandOf(context, deviceName, address) }
+        // 品牌判定只此一条路：水月雨型号档案是白名单匹配，认不出来（null）就不当水月雨处理
+        val brand = runCatching { PodCatalog.brandOf(deviceName, address) }
             .onFailure { Log.w(TAG, "brandOf failed for '$deviceName'", it) }
             .getOrNull()
         if (brand != PodBrand.MOONDROP) return null
