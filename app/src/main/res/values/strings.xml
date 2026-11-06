@@ -44,7 +44,7 @@
     <string name="more_click_action_summary">Choose where tapping \"More\" in the module popup opens</string>
     <string name="notification_click_module_popup">Module popup</string>
     <string name="click_action_system_settings">System Settings</string>
-    <string name="click_action_official">Moondrop app</string>
+    <string name="click_action_official">MOONDROP</string>
     <string name="click_action_module">Module</string>
     <string name="enabled">On</string>
     <string name="off">Off</string>
@@ -84,9 +84,9 @@
     <string name="import_images">Import Images</string>
     <string name="import_source_title">Import Images</string>
     <string name="import_source_summary">Choose an image source</string>
-    <string name="import_source_official_title">Import from MOONDROP App</string>
+    <string name="import_source_official_title">Import from MOONDROP</string>
     <string name="import_source_official_summary">MOONDROP: take the images straight from the official product catalogue (no ROOT, no app install needed)</string>
-    <string name="official_import_title">MOONDROP Official Images</string>
+    <string name="official_import_title">MOONDROP model images</string>
     <string name="official_import_summary">Images come from the MOONDROP official product catalogue</string>
     <string name="official_import_hint">Pick a model to import: model image plus left / right earbud images (official transparent renders).</string>
     <string name="official_import_error">Failed to load the official product catalogue. Check your network and retry.</string>

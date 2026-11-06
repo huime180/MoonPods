@@ -45,7 +45,7 @@
     <string name="more_click_action_summary">选择点击模块弹窗“更多”按钮时打开的位置</string>
     <string name="notification_click_module_popup">模块弹窗</string>
     <string name="click_action_system_settings">系统设置</string>
-    <string name="click_action_official">水月雨官方 app</string>
+    <string name="click_action_official">MOONDROP</string>
     <string name="click_action_module">模块</string>
     <string name="enabled">开启</string>
     <string name="off">关闭</string>
@@ -85,9 +85,9 @@
     <string name="import_images">导入图片</string>
     <string name="import_source_title">导入图片</string>
     <string name="import_source_summary">选择图片来源</string>
-    <string name="import_source_official_title">从水月雨官方 App 导入</string>
+    <string name="import_source_official_title">从 MOONDROP 导入</string>
     <string name="import_source_official_summary">MOONDROP：直接按官方产品目录取图（不需要 ROOT，也不用装官方 App）</string>
-    <string name="official_import_title">水月雨官方机型图</string>
+    <string name="official_import_title">MOONDROP 机型图</string>
     <string name="official_import_summary">图片来自 MOONDROP 官方产品目录</string>
     <string name="official_import_hint">选择机型后导入：机型图 + 左耳 / 右耳图（官方透明产品渲染）。</string>
     <string name="official_import_error">拉取官方产品目录失败，请检查网络后重试。</string>

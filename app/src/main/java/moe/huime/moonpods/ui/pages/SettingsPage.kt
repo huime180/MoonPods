@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -105,7 +106,7 @@ fun SettingsPage(
     val notificationClickActionOptions = listOf(
         stringResource(R.string.notification_click_module_popup),
         stringResource(R.string.click_action_system_settings),
-        stringResource(R.string.click_action_official),
+        moe.huime.moonpods.utils.OfficialApp.label(LocalContext.current),
     )
     val moreClickActionValues = listOf(
         ConfigManager.MORE_CLICK_OFFICIAL,
@@ -113,7 +114,7 @@ fun SettingsPage(
         ConfigManager.MORE_CLICK_MODULE,
     )
     val moreClickActionOptions = listOf(
-        stringResource(R.string.click_action_official),
+        moe.huime.moonpods.utils.OfficialApp.label(LocalContext.current),
         stringResource(R.string.click_action_system_settings),
         stringResource(R.string.click_action_module),
     )
