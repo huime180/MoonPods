@@ -435,7 +435,14 @@ object NorootNotification {
                     ?: Intent(context, moe.huime.moonpods.PopupActivity::class.java)
 
             moe.huime.moonpods.config.ConfigManager.NOTIFICATION_CLICK_SYSTEM_SETTINGS ->
-                Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                // 明确指向系统设置的蓝牙页：隐式 action 会被部分 ROM 落到「应用信息」页
+                Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS).apply {
+                    setPackage("com.android.settings")
+                    putExtra(
+                        android.provider.Settings.EXTRA_APP_PACKAGE,
+                        "com.android.settings",
+                    )
+                }
 
             else -> Intent(context, moe.huime.moonpods.PopupActivity::class.java)
         }.apply {
