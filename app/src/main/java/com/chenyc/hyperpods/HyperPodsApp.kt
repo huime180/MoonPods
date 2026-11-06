@@ -9,6 +9,8 @@ import java.util.concurrent.CopyOnWriteArraySet
 class HyperPodsApp : Application(), XposedServiceHelper.OnServiceListener {
     override fun onCreate() {
         super.onCreate()
+        // 免 root 独立链路：开关打开才启动，与 Root 注入链路互不影响
+        runCatching { com.chenyc.hyperpods.noroot.NorootBridge.init(this) }
         XposedServiceHelper.registerListener(this)
     }
 
