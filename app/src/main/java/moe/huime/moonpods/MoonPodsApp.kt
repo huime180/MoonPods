@@ -20,6 +20,15 @@ class MoonPodsApp : Application(), XposedServiceHelper.OnServiceListener {
                 override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
                     if (intent?.action != android.bluetooth.BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED) return
                     val state = intent.getIntExtra(android.bluetooth.BluetoothProfile.EXTRA_STATE, -1)
+                    if (state == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED &&
+                        ConfigManager.workMode() == ConfigManager.WORK_MODE_ROOT
+                    ) {
+                        // Root 模式下断联：即使 hook 没收到事件，也要让 UI 立刻退出「已接管」
+                        sendBroadcast(android.content.Intent(
+                            moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction.PODS_DISCONNECTED
+                        ).setPackage(packageName))
+                        return
+                    }
                     if (state != android.bluetooth.BluetoothProfile.STATE_CONNECTED) return
                     val device = runCatching {
                         intent.getParcelableExtra(
