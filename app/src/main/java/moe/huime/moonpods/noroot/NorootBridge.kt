@@ -141,6 +141,7 @@ object NorootBridge : PodListener {
         val filter = IntentFilter().apply {
             listOf(
                 MoonPodsAction.ANC_SELECT,
+                MoonPodsAction.ACTION_ANC_SELECT,
                 MoonPodsAction.GAIN_SELECT,
                 MoonPodsAction.LED_SELECT,
                 MoonPodsAction.PROMPT_TONE_SELECT,
@@ -186,7 +187,9 @@ object NorootBridge : PodListener {
                 val action = intent?.action ?: return
                 runCatching {
                     when (action) {
-                        MoonPodsAction.ANC_SELECT ->
+                        // 两套动作名都收：模块页用 ANC_SELECT，历史/弹窗路径可能发 ACTION_ANC_SELECT
+                        MoonPodsAction.ANC_SELECT,
+                        MoonPodsAction.ACTION_ANC_SELECT ->
                             MoondropLink.setAnc(intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, 0))
                         MoonPodsAction.GAIN_SELECT ->
                             MoondropLink.setGain(intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, 0))
