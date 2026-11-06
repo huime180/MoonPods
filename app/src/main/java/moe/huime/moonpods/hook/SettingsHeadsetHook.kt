@@ -40,11 +40,6 @@ class SettingsHeadsetHook : HookContext() {
     private val hiddenViewIds = listOf("batterybox", "diverbox")
 
     override fun onHook() {
-        // 免 root 模式：系统应用保持原样，不做任何 hook（重启作用域后即恢复）
-        if (moe.huime.moonpods.pods.WorkModeBridge.isNoRoot()) {
-            Log.i(TAG, "no-root mode: skip hooks")
-            return
-        }
         runCatching {
             val activityClass = findClass("com.android.settings.bluetooth.MiuiHeadsetActivity")
             hookBefore(activityClass.getDeclaredMethod("onCreate", android.os.Bundle::class.java)) {

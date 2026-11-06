@@ -60,11 +60,6 @@ object MiLinkServiceHook : HookContext() {
     private val spatialAudioHook = MiLinkSpatialAudioHook(this)
 
     override fun onHook() {
-        // 免 root 模式：系统应用保持原样，不做任何 hook（重启作用域后即恢复）
-        if (moe.huime.moonpods.pods.WorkModeBridge.isNoRoot()) {
-            Log.i(TAG, "no-root mode: skip hooks")
-            return
-        }
         hookContextEntry()
         hookMxBluetoothRuntime()
         hookHeadsetRuntimeDisplay()

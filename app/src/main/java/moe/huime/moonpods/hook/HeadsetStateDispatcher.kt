@@ -78,7 +78,6 @@ object HeadsetStateDispatcher : HookContext() {
                 val context = instance as ContextWrapper
                 registerAppRequestReceiver(context)
                 // 免 root 模式：链路由应用进程自己建，这里绝不接管（否则两边抢同一条 SPP/GATT）
-                if (moe.huime.moonpods.pods.WorkModeBridge.isNoRoot()) return@post
                 // 认不出来的设备什么都不做（不是本模块支持的耳机时，绝不能去动系统的蓝牙状态）
                 if (!moe.huime.moonpods.pods.moondrop.MoondropCatalog.loaded) {
                     // 被注入进程无法联网：请应用进程代为拉取并写回共享缓存
