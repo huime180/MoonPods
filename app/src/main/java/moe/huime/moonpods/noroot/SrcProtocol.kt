@@ -12,6 +12,8 @@
  */
 package moe.huime.moonpods.noroot
 
+import moe.huime.moonpods.pods.moondrop.MoondropGaia
+
 object SrcProtocol {
 
     // ── GATT ────────────────────────────────────────────────────────────────
@@ -77,7 +79,7 @@ object SrcProtocol {
 
     /** 构造命令帧。 */
     fun command(cmd: Int, seq: Int, payload: ByteArray? = null): ByteArray {
-        val p = payload ?: Gaia.EMPTY
+        val p = payload ?: MoondropGaia.EMPTY
         require(p.size <= MAX_PAYLOAD) { "9ECA payload 不得超过 $MAX_PAYLOAD 字节，实际 ${p.size}" }
         val out = ByteArray(6 + p.size)
         out[0] = MAGIC.toByte()
@@ -116,7 +118,7 @@ object SrcProtocol {
             frameType = d[2].toInt() and 0xFF,
             command = d[3].toInt() and 0xFF,
             seq = d[4].toInt() and 0xFF,
-            payload = if (avail > 0) d.copyOfRange(6, 6 + avail) else Gaia.EMPTY,
+            payload = if (avail > 0) d.copyOfRange(6, 6 + avail) else MoondropGaia.EMPTY,
         )
     }
 

@@ -29,6 +29,8 @@
  */
 package moe.huime.moonpods.noroot
 
+import moe.huime.moonpods.pods.moondrop.MoondropGaia
+
 import moe.huime.moonpods.pods.moondrop.MoondropCatalog as RootMoondropCatalog
 
 /** 传输层：决定用哪条链路与耳机通信。 */
@@ -43,15 +45,15 @@ enum class PodTransport {
 
 /** ANC 使用的 feature 路径。 */
 enum class AncPathKind(val feature: Int) {
-    ANC_V1(Gaia.F_ANC),
-    AUDIO_CURATION(Gaia.F_AUDIO_CURATION),
-    ANC_V2(Gaia.F_ANC_V2);
+    ANC_V1(MoondropGaia.F_ANC),
+    AUDIO_CURATION(MoondropGaia.F_AUDIO_CURATION),
+    ANC_V2(MoondropGaia.F_ANC_V2);
 
     companion object {
         fun fromPath(path: Int): AncPathKind? = when (path) {
-            Gaia.ANC_PATH_ANC_V1 -> ANC_V1
-            Gaia.ANC_PATH_AUDIO_CURATION -> AUDIO_CURATION
-            Gaia.ANC_PATH_ANC_V2 -> ANC_V2
+            MoondropGaia.ANC_PATH_ANC_V1 -> ANC_V1
+            MoondropGaia.ANC_PATH_AUDIO_CURATION -> AUDIO_CURATION
+            MoondropGaia.ANC_PATH_ANC_V2 -> ANC_V2
             else -> null
         }
     }
@@ -134,7 +136,7 @@ data class FeatureProfile(
     /** 是否展示「提示音音量」滑条 */
     val promptVolume: Boolean = false,
     /** 提示音音量上限（官方 App 日志实测音量是 0..100 的百分比） */
-    val promptVolumeMax: Int = Gaia.VOICE_VOLUME_MAX,
+    val promptVolumeMax: Int = MoondropGaia.VOICE_VOLUME_MAX,
     /** 是否展示「LHDC 开关」 */
     val lhdc: Boolean = false,
     /** 是否展示「双设备连接」 */
@@ -142,11 +144,11 @@ data class FeatureProfile(
     /** 是否展示「低延迟模式」 */
     val lowLatency: Boolean = false,
     // 可覆盖的命令号（默认 = Gaia 中已确认/约定的值）
-    val cmdVoiceGetEnable: Int = Gaia.C_VOICE_GET_ENABLE,
-    val cmdVoiceSetEnable: Int = Gaia.C_VOICE_SET_ENABLE,
+    val cmdVoiceGetEnable: Int = MoondropGaia.C_VOICE_GET_ENABLE,
+    val cmdVoiceSetEnable: Int = MoondropGaia.C_VOICE_SET_ENABLE,
     /** 提示音没有独立音量命令，这里与开关指向同一对（仅保留以便覆盖） */
-    val cmdVoiceGetVolume: Int = Gaia.C_VOICE_GET_CONF,
-    val cmdVoiceSetVolume: Int = Gaia.C_VOICE_SET_CONF,
+    val cmdVoiceGetVolume: Int = MoondropGaia.C_VOICE_GET_CONF,
+    val cmdVoiceSetVolume: Int = MoondropGaia.C_VOICE_SET_CONF,
 )
 
 /**

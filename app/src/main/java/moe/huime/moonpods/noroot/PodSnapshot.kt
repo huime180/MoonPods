@@ -4,6 +4,8 @@
  */
 package moe.huime.moonpods.noroot
 
+import moe.huime.moonpods.pods.moondrop.MoondropGaia
+
 import moe.huime.moonpods.noroot.AncMode
 import moe.huime.moonpods.noroot.BATTERY_UNKNOWN
 import moe.huime.moonpods.noroot.Gaia
@@ -13,7 +15,7 @@ data class PodCapabilities(
     /** GET_SUPPORTED_FEATURES 位图（可含多页） */
     val features: Set<Int> = emptySet(),
     /** 实际使用的 ANC 路径（探测结果优先于型号档案） */
-    val ancPath: Int = Gaia.ANC_PATH_UNKNOWN,
+    val ancPath: Int = MoondropGaia.ANC_PATH_UNKNOWN,
     /** 设备真实上报的电池类型（cmd 0 的结果） */
     val batteryTypes: List<Int> = emptyList(),
     val hasGain: Boolean = false,
@@ -113,7 +115,7 @@ data class PodSnapshot(
     /**
      * 空间音频（feature 18）开关；null = 还没读到。
      *
-     * ⚠ 取值语义见 [Gaia.spatialGet] / [Gaia.spatialSet]：payload `0`=关 / `1`=开。
+     * ⚠ 取值语义见 [MoondropGaia.spatialGet] / [MoondropGaia.spatialSet]：payload `0`=关 / `1`=开。
      * 读写与回读都已接线（PROTOCOL.md 第 8 节），但这份状态**尚未在真机上验证过**，
      * 所以 UI 在 null 时按「关」保守呈现，而不是猜成已开启。
      */
@@ -123,13 +125,13 @@ data class PodSnapshot(
     /** 低延迟模式（HyperOS 系统侧）；null = 未知 */
     val lowLatencyOn: Boolean? = null,
     /**
-     * 手势配置（TOUCHV2，5 个字节，顺序见 [Gaia.GestureSlot]；**每字节高 4 位 = 左耳动作、
+     * 手势配置（TOUCHV2，5 个字节，顺序见 [MoondropGaia.GestureSlot]；**每字节高 4 位 = 左耳动作、
      * 低 4 位 = 右耳动作**）；null = 尚未读到。
      *
-     * 用不可变的 [Gaia.GestureConf]（内部按内容 equals）而不是裸 IntArray：
+     * 用不可变的 [MoondropGaia.GestureConf]（内部按内容 equals）而不是裸 IntArray：
      * 裸数组的 equals 是按引用的，会让状态比较永远「不相等」。
      */
-    val gestureConf: Gaia.GestureConf? = null,
+    val gestureConf: MoondropGaia.GestureConf? = null,
     val capabilities: PodCapabilities = PodCapabilities(),
 ) {
     /** 手势配置是否已读到（UI 用它区分「读不到」与「配置为全无」）。 */
@@ -153,7 +155,7 @@ sealed interface PodEvent {
     data class LhdcChanged(val on: Boolean) : PodEvent
     data class DualConnectionChanged(val on: Boolean) : PodEvent
     /** 手势配置变化（读回到新的 5 槽位配置）。 */
-    data class GestureChanged(val conf: Gaia.GestureConf) : PodEvent
+    data class GestureChanged(val conf: MoondropGaia.GestureConf) : PodEvent
     data class LowLatencyChanged(val on: Boolean) : PodEvent
     data class CapabilitiesChanged(val capabilities: PodCapabilities) : PodEvent
     data class Frame(val direction: String, val hex: String, val decoded: String) : PodEvent

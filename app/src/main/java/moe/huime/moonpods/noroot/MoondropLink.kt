@@ -17,6 +17,10 @@
  */
 package moe.huime.moonpods.noroot
 
+import moe.huime.moonpods.pods.moondrop.MoondropFramer
+
+import moe.huime.moonpods.pods.moondrop.MoondropGaia
+
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
@@ -45,7 +49,7 @@ import moe.huime.moonpods.noroot.BATTERY_UNKNOWN
 import moe.huime.moonpods.noroot.BatteryCodec
 import moe.huime.moonpods.noroot.BatteryState
 import moe.huime.moonpods.noroot.Gaia
-import moe.huime.moonpods.noroot.GaiaFramer
+import moe.huime.moonpods.noroot.MoondropFramer
 import moe.huime.moonpods.noroot.MoondropModel
 import moe.huime.moonpods.noroot.MoondropModels
 import moe.huime.moonpods.noroot.MoondropCatalog
@@ -89,7 +93,7 @@ object MoondropLink {
     private var readerJob: Job? = null
     private var pollJob: Job? = null
 
-    private val framer = GaiaFramer()
+    private val framer = MoondropFramer()
     private val batteryState = BatteryState()
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -115,7 +119,7 @@ object MoondropLink {
      * 空间音频（feature 18）开关；null = 还没读到。
      *
      * ⚠ 协议语义核实于 PROTOCOL.md 第 8 节：GET/SET = 1/2、payload `0/1`（与指示灯同一口径，
-     * 见 [Gaia.spatialSet] 的写法）；读/写/回读都已接线，但**本应用从未在支持空间音频的真机上
+     * 见 [MoondropGaia.spatialSet] 的写法）；读/写/回读都已接线，但**本应用从未在支持空间音频的真机上
      * 验证过**（PROTOCOL.md 把这一节标为「已接线、未真机验证」）。所以 UI 只按读回值展示，
      * 读不到就不猜。
      */
@@ -124,12 +128,12 @@ object MoondropLink {
     @Volatile private var headTrackingOn: Boolean? = null
     @Volatile private var lowLatencyOn: Boolean? = null
     /**
-     * 手势配置（TOUCHV2）的 5 个字节（顺序见 [Gaia.GestureSlot]）；null = 还没读到过。
+     * 手势配置（TOUCHV2）的 5 个字节（顺序见 [MoondropGaia.GestureSlot]）；null = 还没读到过。
      *
      * ⚠ 每个字节**打包双耳**：高 4 位 = 左耳动作 id，低 4 位 = 右耳动作 id
      * （字节码 `TouchNewInfo` 的 per-gesture L/R 字段，见 Gaia 的 TOUCHV2 段落）。
      * 内部存 IntArray（与线格式字节一一对应），对外只经 [snapshot] 暴露不可变的
-     * [Gaia.GestureConf]。是否支持由能力位图判定（见 [probeCapabilities] 的 hasGestures）。
+     * [MoondropGaia.GestureConf]。是否支持由能力位图判定（见 [probeCapabilities] 的 hasGestures）。
      */
     @Volatile private var gestureConf: IntArray? = null
     @Volatile private var capabilities = PodCapabilities()
@@ -223,7 +227,7 @@ object MoondropLink {
         headTrackingOn = headTrackingOn,
         lowLatencyOn = lowLatencyOn,
         // 手势：拷贝一份，避免把内部可变数组暴露给监听者
-        gestureConf = gestureConf?.let { Gaia.GestureConf(it.copyOf()) },
+        gestureConf = gestureConf?.let { MoondropGaia.GestureConf(it.copyOf()) },
         capabilities = capabilities,
     )
 
@@ -312,16 +316,16 @@ object MoondropLink {
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
             if (status != BluetoothGatt.GATT_SUCCESS) { Log.w(TAG, "discover failed $status"); return }
-            val svc = g.getService(UUID.fromString(Gaia.GATT_SERVICE)) ?: run {
+            val svc = g.getService(UUID.fromString(MoondropGaia.GATT_SERVICE)) ?: run {
                 Log.w(TAG, "GAIA service not found; falling back to RFCOMM")
                 // 双模设备：BLE 上没有 GAIA 服务时回退 SPP
                 val d = device
                 if (d != null) { useRfcomm = true; scope.launch { connectRfcomm(d) } }
                 return
             }
-            cmdChar = svc.getCharacteristic(UUID.fromString(Gaia.GATT_COMMAND))
-            enableNotify(g, svc.getCharacteristic(UUID.fromString(Gaia.GATT_RESPONSE)))
-            enableNotify(g, svc.getCharacteristic(UUID.fromString(Gaia.GATT_DATA)))
+            cmdChar = svc.getCharacteristic(UUID.fromString(MoondropGaia.GATT_COMMAND))
+            enableNotify(g, svc.getCharacteristic(UUID.fromString(MoondropGaia.GATT_RESPONSE)))
+            enableNotify(g, svc.getCharacteristic(UUID.fromString(MoondropGaia.GATT_DATA)))
             if (cmdChar == null) { Log.w(TAG, "command characteristic missing"); return }
             connected = true
             Log.i(TAG, "GAIA GATT ready: ${device?.name} model=${model.nameZh}")
@@ -347,7 +351,7 @@ object MoondropLink {
         ch ?: return
         try {
             g.setCharacteristicNotification(ch, true)
-            val cccd = ch.getDescriptor(UUID.fromString(Gaia.CCCD)) ?: return
+            val cccd = ch.getDescriptor(UUID.fromString(MoondropGaia.CCCD)) ?: return
             if (Build.VERSION.SDK_INT >= 33) {
                 g.writeDescriptor(cccd, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
             } else {
@@ -394,7 +398,7 @@ object MoondropLink {
 
     private fun connectRfcomm(btDevice: BluetoothDevice, retry: Int = 0) {
         try {
-            val uuid = UUID.fromString(Gaia.SPP_UUID)
+            val uuid = UUID.fromString(MoondropGaia.SPP_UUID)
             val s = try {
                 btDevice.createRfcommSocketToServiceRecord(uuid)
             } catch (t: Throwable) {
@@ -468,7 +472,7 @@ object MoondropLink {
             writeLock.withLock {
                 try {
                     if (useRfcomm) {
-                        val onWire = if (rfcommUsesHeader) Gaia.wrapRfcomm(pkt) else pkt
+                        val onWire = if (rfcommUsesHeader) MoondropGaia.wrapRfcomm(pkt) else pkt
                         socket?.outputStream?.apply { write(onWire); flush() }
                     } else {
                         val g = gatt ?: return@withLock
@@ -484,7 +488,7 @@ object MoondropLink {
                             g.writeCharacteristic(c)
                         }
                     }
-                    emit(PodEvent.Frame("TX", Gaia.hex(pkt), decode(pkt)))
+                    emit(PodEvent.Frame("TX", MoondropGaia.hex(pkt), decode(pkt)))
                 } catch (t: Throwable) {
                     Log.w(TAG, "write failed", t)
                 }
@@ -499,11 +503,11 @@ object MoondropLink {
      * 而不是 `withTimeoutOrNull { fut.get() }` —— 后者无法中断阻塞中的 get()。
      */
     private suspend fun request(pkt: ByteArray, timeoutMs: Long = CMD_TIMEOUT_MS): ByteArray? {
-        // ⚠ 版本探测包走 vendor 0x000A，Gaia.parse 只认 0x001D 会返回 null，
+        // ⚠ 版本探测包走 vendor 0x000A，MoondropGaia.parse 只认 0x001D 会返回 null，
         //   所以必须先判探测包，再走常规解析，否则探测请求根本发不出去。
         val isVersionProbe = pkt.size >= 2 &&
             (pkt[0].toInt() and 0xFF) == 0x00 && (pkt[1].toInt() and 0xFF) == 0x0A
-        val key = if (isVersionProbe) PROBE_FEATURE_KEY else (Gaia.parse(pkt)?.feature ?: return null)
+        val key = if (isVersionProbe) PROBE_FEATURE_KEY else (MoondropGaia.parse(pkt)?.feature ?: return null)
         val fut = java.util.concurrent.CompletableFuture<ByteArray>()
         responses[key] = fut
         write(pkt)
@@ -521,26 +525,26 @@ object MoondropLink {
     }
 
     private fun onPdu(pdu: ByteArray) {
-        // GAIA 版本探测用的是 V1/V2 包（vendor 0x000A），Gaia.parse 只认 0x001D，
+        // GAIA 版本探测用的是 V1/V2 包（vendor 0x000A），MoondropGaia.parse 只认 0x001D，
         // 因此这里单独识别，用于 RFCOMM 封装的探测。
         if (pdu.size >= 4) {
             val vendor = ((pdu[0].toInt() and 0xFF) shl 8) or (pdu[1].toInt() and 0xFF)
-            if (vendor == Gaia.VENDOR_CSR) {
-                emit(PodEvent.Frame("RX", Gaia.hex(pdu), "GAIA version response (vendor 0x000A)"))
+            if (vendor == MoondropGaia.VENDOR_CSR) {
+                emit(PodEvent.Frame("RX", MoondropGaia.hex(pdu), "GAIA version response (vendor 0x000A)"))
                 responses.remove(PROBE_FEATURE_KEY)?.complete(pdu)
                 return
             }
         }
-        val f = Gaia.parse(pdu) ?: return
-        emit(PodEvent.Frame("RX", Gaia.hex(pdu), "feature=${f.feature} type=${f.type} cmd=${f.command}"))
+        val f = MoondropGaia.parse(pdu) ?: return
+        emit(PodEvent.Frame("RX", MoondropGaia.hex(pdu), "feature=${f.feature} type=${f.type} cmd=${f.command}"))
         // 唤醒等待者
         responses.remove(f.feature)?.complete(f.payload)
         dispatch(f)
     }
 
     private fun decode(pkt: ByteArray): String {
-        val f = Gaia.parse(pkt) ?: return ""
-        return "feature=${f.feature} cmd=${f.command} payload=${Gaia.hex(f.payload)}"
+        val f = MoondropGaia.parse(pkt) ?: return ""
+        return "feature=${f.feature} cmd=${f.command} payload=${MoondropGaia.hex(f.payload)}"
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -570,25 +574,25 @@ object MoondropLink {
         val saved = pref?.getInt(PREF_RFCOMM_FRAMING, -1) ?: -1
         if (!useRfcomm) {
             // BLE：无封装问题，仅发版本探测
-            runCatching { request(Gaia.getApiVersion(), ANC_TIMEOUT_MS) }
+            runCatching { request(MoondropGaia.getApiVersion(), ANC_TIMEOUT_MS) }
             return
         }
         if (saved == 0 || saved == 1) {
             rfcommUsesHeader = saved == 1
             rfcommFramingProbed = true
-            request(Gaia.getApiVersion(), ANC_TIMEOUT_MS)
+            request(MoondropGaia.getApiVersion(), ANC_TIMEOUT_MS)
             Log.i(TAG, "RFCOMM framing (cached): header=$rfcommUsesHeader")
             return
         }
         rfcommUsesHeader = true
-        if (request(Gaia.getApiVersion(), 1200) != null) {
+        if (request(MoondropGaia.getApiVersion(), 1200) != null) {
             rfcommFramingProbed = true
             pref?.edit()?.putInt(PREF_RFCOMM_FRAMING, 1)?.apply()
             Log.i(TAG, "RFCOMM framing probed: WITH FF 04 00 header")
             return
         }
         rfcommUsesHeader = false
-        if (request(Gaia.getApiVersion(), 1200) != null) {
+        if (request(MoondropGaia.getApiVersion(), 1200) != null) {
             rfcommFramingProbed = true
             pref?.edit()?.putInt(PREF_RFCOMM_FRAMING, 0)?.apply()
             Log.i(TAG, "RFCOMM framing probed: BARE PDU")
@@ -601,49 +605,49 @@ object MoondropLink {
 
     private suspend fun probeCapabilities() {
         val feats = HashSet<Int>()
-        var cmd = Gaia.C_BASIC_GET_SUPPORTED_FEATURES
+        var cmd = MoondropGaia.C_BASIC_GET_SUPPORTED_FEATURES
         var guard = 0
         while (guard++ < 4) {
-            val p = request(Gaia.command(Gaia.F_BASIC, cmd), ANC_TIMEOUT_MS) ?: break
+            val p = request(MoondropGaia.command(MoondropGaia.F_BASIC, cmd), ANC_TIMEOUT_MS) ?: break
             // 实测格式（Pudding 真机，官方 App logcat）：
             //   payload = [moreFlag:1][featureId:1][version:1]...
             //   例：00 | 00 02 | 01 01 | 05 01 | 0D 01 | 0E 01 | 0F 01 | 10 01 | 13 01 | 14 01 | 16 01 | 20 01
             //   → features {0,1,5,13,14,15,16,19,20,22,32}
             // ⚠ 注意 moreFlag 属于**同一份 payload**，不能再在别处剥一次，
             //   否则 feature/version 会整体错位一格（曾经的能力探测错误）。
-            val (more, entries) = Gaia.parseFeatureEntries(p)
+            val (more, entries) = MoondropGaia.parseFeatureEntries(p)
             if (entries.isNotEmpty()) {
                 feats.addAll(entries.map { it.feature })
                 if (!more) break
-                cmd = Gaia.C_BASIC_GET_SUPPORTED_FEATURES_NEXT
+                cmd = MoondropGaia.C_BASIC_GET_SUPPORTED_FEATURES_NEXT
             } else {
                 // 回退：老固件的 32-bit 位图形式（无分页标志）
-                feats.addAll(Gaia.parseSupportedFeatures(p))
+                feats.addAll(MoondropGaia.parseSupportedFeatures(p))
                 break
             }
         }
 
         // 设备上报的电池类型（修复「右耳不显示」的第一步）
-        val supported = request(Gaia.batteryGetAllV4(), ANC_TIMEOUT_MS)?.let { BatteryCodec.parseSupported(it) }
+        val supported = request(MoondropGaia.batteryGetAllV4(), ANC_TIMEOUT_MS)?.let { BatteryCodec.parseSupported(it) }
 
-        val path = Gaia.ancPathFrom(feats).let {
-            if (it != Gaia.ANC_PATH_UNKNOWN) it else (model.anc?.path?.feature ?: Gaia.ANC_PATH_UNKNOWN)
+        val path = MoondropGaia.ancPathFrom(feats).let {
+            if (it != MoondropGaia.ANC_PATH_UNKNOWN) it else (model.anc?.path?.feature ?: MoondropGaia.ANC_PATH_UNKNOWN)
         }
 
         capabilities = PodCapabilities(
             features = feats,
             ancPath = path,
             batteryTypes = supported?.toList() ?: emptyList(),
-            hasGain = model.dc.hasGain || Gaia.F_DAC_GAIN in feats,
-            hasLed = model.dc.hasLed || Gaia.F_LED in feats,
-            hasSpatial = model.dc.hasSpatial || Gaia.F_SPATIAL_AUDIO in feats,
+            hasGain = model.dc.hasGain || MoondropGaia.F_DAC_GAIN in feats,
+            hasLed = model.dc.hasLed || MoondropGaia.F_LED in feats,
+            hasSpatial = model.dc.hasSpatial || MoondropGaia.F_SPATIAL_AUDIO in feats,
             hasHeadTracking = model.dc.hasHeadTracking,
-            hasPromptTone = model.features.promptTone || Gaia.F_VOICE in feats,
-            hasPromptVolume = model.features.promptVolume || Gaia.F_VOICE in feats,
-            hasLhdc = model.features.lhdc || Gaia.F_CODEC_TYPE in feats,
-            hasDualConnection = model.features.dualConnection || Gaia.F_ONEBRINGTWO in feats,
+            hasPromptTone = model.features.promptTone || MoondropGaia.F_VOICE in feats,
+            hasPromptVolume = model.features.promptVolume || MoondropGaia.F_VOICE in feats,
+            hasLhdc = model.features.lhdc || MoondropGaia.F_CODEC_TYPE in feats,
+            hasDualConnection = model.features.dualConnection || MoondropGaia.F_ONEBRINGTWO in feats,
             // 手势：**只看能力位图**（Pudding 真机位图里确有 feature 22）；型号档案不参与判定
-            hasGestures = Gaia.F_TOUCHV2 in feats,
+            hasGestures = MoondropGaia.F_TOUCHV2 in feats,
             hasLowLatency = model.features.lowLatency,
             probed = true,
         )
@@ -699,8 +703,8 @@ object MoondropLink {
     suspend fun refreshBattery() {
         val ids = capabilities.batteryTypes.takeIf { it.isNotEmpty() }?.toIntArray()
             ?: BatteryCodec.FALLBACK_QUERY_IDS
-        val p = request(Gaia.batteryGet(ids), ANC_TIMEOUT_MS)
-            ?: request(Gaia.batteryGetAll(), ANC_TIMEOUT_MS)
+        val p = request(MoondropGaia.batteryGet(ids), ANC_TIMEOUT_MS)
+            ?: request(MoondropGaia.batteryGetAll(), ANC_TIMEOUT_MS)
             ?: return
         applyBatteryPayload(p)
     }
@@ -721,9 +725,9 @@ object MoondropLink {
     suspend fun refreshAnc() {
         val path = capabilities.ancPath
         val pkt = when (path) {
-            Gaia.ANC_PATH_ANC_V2 -> Gaia.ancV2GetMode()
-            Gaia.ANC_PATH_AUDIO_CURATION -> Gaia.audioCurationGetMode()
-            Gaia.ANC_PATH_ANC_V1 -> Gaia.ancV1GetState()
+            MoondropGaia.ANC_PATH_ANC_V2 -> MoondropGaia.ancV2GetMode()
+            MoondropGaia.ANC_PATH_AUDIO_CURATION -> MoondropGaia.audioCurationGetMode()
+            MoondropGaia.ANC_PATH_ANC_V1 -> MoondropGaia.ancV1GetState()
             else -> return
         }
         val p = request(pkt, ANC_TIMEOUT_MS) ?: return
@@ -735,9 +739,9 @@ object MoondropLink {
         val dev = payload[0].toInt() and 0xFF
         val prof = model.anc
         ancIndex = when (capabilities.ancPath) {
-            Gaia.ANC_PATH_ANC_V2 -> if (prof != null) prof.deviceToUi(dev) else dev
-            Gaia.ANC_PATH_AUDIO_CURATION -> prof?.deviceToUi(dev) ?: (dev - 1)
-            Gaia.ANC_PATH_ANC_V1 -> if (dev == 0) 0 else 1
+            MoondropGaia.ANC_PATH_ANC_V2 -> if (prof != null) prof.deviceToUi(dev) else dev
+            MoondropGaia.ANC_PATH_AUDIO_CURATION -> prof?.deviceToUi(dev) ?: (dev - 1)
+            MoondropGaia.ANC_PATH_ANC_V1 -> if (dev == 0) 0 else 1
             else -> -1
         }
         if (ancIndex >= 0) {
@@ -747,14 +751,14 @@ object MoondropLink {
     }
 
     suspend fun refreshGain() {
-        val p = request(Gaia.gainGet(), ANC_TIMEOUT_MS) ?: return
+        val p = request(MoondropGaia.gainGet(), ANC_TIMEOUT_MS) ?: return
         if (p.isEmpty()) return
         gainIndex = model.dc.gainDeviceToUi(p[0].toInt() and 0xFF)
         emit(PodEvent.GainChanged(gainIndex))
     }
 
     suspend fun refreshLed() {
-        val p = request(Gaia.ledGet(), ANC_TIMEOUT_MS) ?: return
+        val p = request(MoondropGaia.ledGet(), ANC_TIMEOUT_MS) ?: return
         if (p.isEmpty()) return
         ledOn = (p[0].toInt() and 0xFF) == 1
         emit(PodEvent.LedChanged(ledOn!!))
@@ -768,12 +772,12 @@ object MoondropLink {
      * 开关与音量来自**同一次读**。
      */
     suspend fun refreshPromptVoice() {
-        val p = request(Gaia.voiceGetConf(model.features.cmdVoiceGetEnable), ANC_TIMEOUT_MS) ?: return
-        val conf = Gaia.parseVoiceConf(p) ?: return
+        val p = request(MoondropGaia.voiceGetConf(model.features.cmdVoiceGetEnable), ANC_TIMEOUT_MS) ?: return
+        val conf = MoondropGaia.parseVoiceConf(p) ?: return
         applyVoiceConf(conf)
     }
 
-    private fun applyVoiceConf(conf: Gaia.VoiceConf) {
+    private fun applyVoiceConf(conf: MoondropGaia.VoiceConf) {
         promptToneOn = conf.enabled
         promptVolumeRaw = conf.volume
         promptIndex = conf.index
@@ -788,7 +792,7 @@ object MoondropLink {
      *   （[setLhdc] 依赖这一点：读不到时保留乐观值，而不是悄悄弹回旧值）。
      */
     suspend fun refreshLhdc(): Boolean {
-        val p = request(Gaia.lhdcGet(), ANC_TIMEOUT_MS) ?: return false
+        val p = request(MoondropGaia.lhdcGet(), ANC_TIMEOUT_MS) ?: return false
         if (p.isEmpty()) return false
         applyLhdc((p[0].toInt() and 0xFF) == 1)
         return true
@@ -802,7 +806,7 @@ object MoondropLink {
     }
 
     suspend fun refreshDualConnection() {
-        val p = request(Gaia.dualConnectionGet(), ANC_TIMEOUT_MS) ?: return
+        val p = request(MoondropGaia.dualConnectionGet(), ANC_TIMEOUT_MS) ?: return
         if (p.isEmpty()) return
         dualConnectionOn = (p[0].toInt() and 0xFF) == 1
         emit(PodEvent.DualConnectionChanged(dualConnectionOn!!))
@@ -821,11 +825,11 @@ object MoondropLink {
     suspend fun refreshSpatial() = spatialReadLock.withLock {
         // 两个读各自按自己的能力位门控：不支持那一条就不发（老机型不发未知命令）
         if (capabilities.hasSpatial) {
-            val sp = request(Gaia.spatialGet(), ANC_TIMEOUT_MS)
+            val sp = request(MoondropGaia.spatialGet(), ANC_TIMEOUT_MS)
             if (sp != null && sp.isNotEmpty()) spatialEnabled = (sp[0].toInt() and 0xFF) == 1
         }
         if (!capabilities.hasHeadTracking) return@withLock
-        val ht = request(Gaia.headTrackingGet(), ANC_TIMEOUT_MS)
+        val ht = request(MoondropGaia.headTrackingGet(), ANC_TIMEOUT_MS)
         if (ht != null && ht.isNotEmpty()) headTrackingOn = (ht[0].toInt() and 0xFF) == 1
     }
 
@@ -854,13 +858,13 @@ object MoondropLink {
 
     /** 读回 5 个槽位（不落状态）；超时/回包过短返回 null。 */
     private suspend fun fetchGestureConf(): IntArray? {
-        val p = request(Gaia.touchV2GetConf(), ANC_TIMEOUT_MS) ?: return null
-        return Gaia.parseGestureConf(p)?.slots
+        val p = request(MoondropGaia.touchV2GetConf(), ANC_TIMEOUT_MS) ?: return null
+        return MoondropGaia.parseGestureConf(p)?.slots
     }
 
     private fun applyGestureConf(slots: IntArray) {
         gestureConf = slots
-        emit(PodEvent.GestureChanged(Gaia.GestureConf(slots.copyOf())))
+        emit(PodEvent.GestureChanged(MoondropGaia.GestureConf(slots.copyOf())))
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -870,7 +874,7 @@ object MoondropLink {
     fun setAnc(uiIndex: Int) {
         scope.launch {
             when (capabilities.ancPath) {
-                Gaia.ANC_PATH_ANC_V2 -> {
+                MoondropGaia.ANC_PATH_ANC_V2 -> {
                     // 官方 AncV2Handler 枚举：OFF=0/ON=1/TRANSPARENT=2/ANTI_WIND=3/
                     // ADAPTIVE=4/LIVE=5，与 UI 顺序一致 → **未校准时恒等**；只有型号档案
                     // 明确写了 ANC_V2 专属映射（布丁 [0,4,2,3,1]）才覆盖。
@@ -883,16 +887,16 @@ object MoondropLink {
                         uiIndex
                     }
                     if (dev < 0) return@launch
-                    write(Gaia.ancV2SetMode(dev))
+                    write(MoondropGaia.ancV2SetMode(dev))
                 }
-                Gaia.ANC_PATH_AUDIO_CURATION -> {
+                MoondropGaia.ANC_PATH_AUDIO_CURATION -> {
                     val dev = model.anc?.uiToDevice(uiIndex) ?: uiIndex
-                    val bit = Gaia.AC_SET_PAYLOAD.getOrNull(uiIndex) ?: dev
-                    write(Gaia.audioCurationSetMode(bit))
+                    val bit = MoondropGaia.AC_SET_PAYLOAD.getOrNull(uiIndex) ?: dev
+                    write(MoondropGaia.audioCurationSetMode(bit))
                 }
-                Gaia.ANC_PATH_ANC_V1 -> {
+                MoondropGaia.ANC_PATH_ANC_V1 -> {
                     val ui = model.anc?.uiToDevice(uiIndex) ?: uiIndex
-                    write(Gaia.ancV1SetState(if (ui == 0) 0 else 1))
+                    write(MoondropGaia.ancV1SetState(if (ui == 0) 0 else 1))
                 }
             }
             delay(300)
@@ -904,17 +908,17 @@ object MoondropLink {
     fun setGain(uiIndex: Int) {
         val dev = model.dc.gainUiToDevice(uiIndex)
         if (dev < 0) return
-        scope.launch { write(Gaia.gainSet(dev)); delay(300); refreshGain(); emitState() }
+        scope.launch { write(MoondropGaia.gainSet(dev)); delay(300); refreshGain(); emitState() }
     }
 
     fun setLed(on: Boolean) {
-        scope.launch { write(Gaia.ledSet(if (on) 1 else 0)); delay(300); refreshLed(); emitState() }
+        scope.launch { write(MoondropGaia.ledSet(if (on) 1 else 0)); delay(300); refreshLed(); emitState() }
     }
 
     /**
      * 写空间音频开关（feature 18 / cmd 2）。
      *
-     * payload 取值沿用 [Gaia.spatialSet] 里唯一的一种写法：`0`=关 / `1`=开（与 [setLed] 同口径，
+     * payload 取值沿用 [MoondropGaia.spatialSet] 里唯一的一种写法：`0`=关 / `1`=开（与 [setLed] 同口径，
      * 与 PROTOCOL.md 第 8 节「payload `0/1`」一致）；这里**不发明映射表**。
      * 写完按仓库既有写法回读一次再 emitState，读到什么就是什么。
      *
@@ -924,7 +928,7 @@ object MoondropLink {
     fun setSpatial(enabled: Boolean) {
         if (!capabilities.hasSpatial) return
         scope.launch {
-            write(Gaia.spatialSet(if (enabled) 1 else 0))
+            write(MoondropGaia.spatialSet(if (enabled) 1 else 0))
             delay(300)
             refreshSpatial()
             emitState()
@@ -932,13 +936,13 @@ object MoondropLink {
     }
 
     /**
-     * 写头部追踪开关（同一 feature 18 的 cmd 4），payload 同样 `0/1`（[Gaia.headTrackingSet]）。
+     * 写头部追踪开关（同一 feature 18 的 cmd 4），payload 同样 `0/1`（[MoondropGaia.headTrackingSet]）。
      * ⚠ 待真机确认，理由同 [setSpatial]。
      */
     fun setHeadTracking(enabled: Boolean) {
         if (!capabilities.hasHeadTracking) return
         scope.launch {
-            write(Gaia.headTrackingSet(if (enabled) 1 else 0))
+            write(MoondropGaia.headTrackingSet(if (enabled) 1 else 0))
             delay(300)
             refreshSpatial()
             emitState()
@@ -956,7 +960,7 @@ object MoondropLink {
     private fun setPromptVoice(enabled: Boolean, volumePercent: Int, index: Int) {
         scope.launch {
             write(
-                Gaia.voiceSetConf(
+                MoondropGaia.voiceSetConf(
                     enabled = enabled,
                     volumePercent = volumePercent,
                     index = index,
@@ -976,7 +980,7 @@ object MoondropLink {
 
     /** @param raw 提示音音量百分比 0..100（与官方 App 同一单位） */
     fun setPromptVolumeRaw(raw: Int) {
-        setPromptVoice(promptToneOn ?: true, raw.coerceIn(0, Gaia.VOICE_VOLUME_MAX), promptIndex)
+        setPromptVoice(promptToneOn ?: true, raw.coerceIn(0, MoondropGaia.VOICE_VOLUME_MAX), promptIndex)
     }
 
     /**
@@ -999,7 +1003,7 @@ object MoondropLink {
         emit(PodEvent.LhdcChanged(on))
         emitState()
         scope.launch {
-            write(Gaia.lhdcSet(on))
+            write(MoondropGaia.lhdcSet(on))
             delay(500)
             val settled = if (refreshLhdc()) {
                 Log.i(TAG, "setLhdc($on): confirmed by read-back lhdcOn=$lhdcOn")
@@ -1038,54 +1042,54 @@ object MoondropLink {
     }
 
     fun setDualConnection(on: Boolean) {
-        scope.launch { write(Gaia.dualConnectionSet(on)); delay(500); refreshDualConnection(); emitState() }
+        scope.launch { write(MoondropGaia.dualConnectionSet(on)); delay(500); refreshDualConnection(); emitState() }
     }
 
     /**
      * 写「某只手势的某只耳朵」的动作 —— **只改该字节里的那一个半字节**。
      *
-     * ⚠ **必须下发完整 5 字节**（见 [Gaia.touchV2SetConf]）：固件把 5 个字节当作一份
+     * ⚠ **必须下发完整 5 字节**（见 [MoondropGaia.touchV2SetConf]）：固件把 5 个字节当作一份
      * 配置，只发一部分会把其余字节写坏 —— 与 [setPromptVoice] 是同一个坑。
      * 因此这里：若还没读到过配置，先读一次再写；**读不到就放弃本次写入**，
      * 绝不用 0 补齐（那等于把用户其余手势 / 另一只耳朵悄悄清成「无」）。
-     * [Gaia.GestureConf.with] 负责半字节读改写：另一只耳朵与其余 4 个字节原样保留。
+     * [MoondropGaia.GestureConf.with] 负责半字节读改写：另一只耳朵与其余 4 个字节原样保留。
      *
      * 写完按既有模式 delay 后回读，保证 UI 显示的是固件真实接受了的值。
      *
      * @param slot     手势种类（单击 / 双击 / 三击 / 长按1秒 / 长按3秒）
      * @param ear      哪只耳朵（左 = 高 4 位，右 = 低 4 位）
-     * @param actionId 动作 id（半字节 0..15；不在 [Gaia.TouchActions] 里的值也原样下发）
+     * @param actionId 动作 id（半字节 0..15；不在 [MoondropGaia.TouchActions] 里的值也原样下发）
      */
-    fun setGesture(slot: Gaia.GestureSlot, ear: Gaia.Ear, actionId: Int) {
+    fun setGesture(slot: MoondropGaia.GestureSlot, ear: MoondropGaia.Ear, actionId: Int) {
         scope.launch {
             val current = gestureConf ?: fetchGestureConf()
             if (current == null) {
                 Log.w(TAG, "setGesture($slot/$ear) skipped: gesture config unknown")
                 return@launch
             }
-            var next = Gaia.GestureConf(current.copyOf()).with(slot, ear, actionId)
+            var next = MoondropGaia.GestureConf(current.copyOf()).with(slot, ear, actionId)
             // 长按 1 秒 / 3 秒 **同侧互斥**：同一只耳朵上两档不能共存（按住 3 秒必然也满足
             // 1 秒的触发条件，两条同时配时设备行为不确定），所以把某一个设成非「无」时，
             // 只把**这只耳**的另一档清成「无」—— 另一只耳的长按配置不受影响。
             // 与 dev 侧 pods/moondrop/MoondropController.setGesture 的同一条规则一致。
             // 只有长按这一对有互斥关系；单击/双击/三击之间没有，别顺手扩大。
             val counterpart = when (slot) {
-                Gaia.GestureSlot.LONG_PRESS_1S -> Gaia.GestureSlot.LONG_PRESS_3S
-                Gaia.GestureSlot.LONG_PRESS_3S -> Gaia.GestureSlot.LONG_PRESS_1S
+                MoondropGaia.GestureSlot.LONG_PRESS_1S -> MoondropGaia.GestureSlot.LONG_PRESS_3S
+                MoondropGaia.GestureSlot.LONG_PRESS_3S -> MoondropGaia.GestureSlot.LONG_PRESS_1S
                 else -> null
             }
-            if (counterpart != null && actionId != Gaia.TOUCH_ACTION_NONE &&
-                next.action(counterpart, ear) != Gaia.TOUCH_ACTION_NONE
+            if (counterpart != null && actionId != MoondropGaia.TOUCH_ACTION_NONE &&
+                next.action(counterpart, ear) != MoondropGaia.TOUCH_ACTION_NONE
             ) {
-                next = next.with(counterpart, ear, Gaia.TOUCH_ACTION_NONE)
+                next = next.with(counterpart, ear, MoondropGaia.TOUCH_ACTION_NONE)
                 Log.i(TAG, "setGesture: 同侧互斥 -> ${ear.labelZh} 的 ${counterpart.labelZh} 自动置空")
             }
             Log.i(
                 TAG,
                 "setGesture ${slot.index}/${slot.labelZh}/${ear.labelZh} -> " +
-                    "${Gaia.TouchActions.matchOrUnknown(actionId)} ($next)",
+                    "${MoondropGaia.TouchActions.matchOrUnknown(actionId)} ($next)",
             )
-            write(Gaia.touchV2SetConf(next.toPayload()))
+            write(MoondropGaia.touchV2SetConf(next.toPayload()))
             delay(300)
             refreshGestures()
             emitState()
@@ -1103,63 +1107,63 @@ object MoondropLink {
     // 响应分发（除了唤醒 request()，还要处理主动通知）
     // ══════════════════════════════════════════════════════════════════════
 
-    private fun dispatch(f: Gaia.Frame) {
+    private fun dispatch(f: MoondropGaia.Frame) {
         when (f.feature) {
-            Gaia.F_BATTERY -> if (f.command == Gaia.C_BATT_GET_BATTERY_LEVELS ||
-                f.command == Gaia.C_BATT_GET_BATTERY_LEVELS_V4
+            MoondropGaia.F_BATTERY -> if (f.command == MoondropGaia.C_BATT_GET_BATTERY_LEVELS ||
+                f.command == MoondropGaia.C_BATT_GET_BATTERY_LEVELS_V4
             ) {
                 applyBatteryPayload(f.payload)
             }
-            Gaia.F_ANC_V2 -> if (f.command == Gaia.C_ANC2_GET_CURRENT_MODE ||
-                f.command == Gaia.C_ANC2_SET_CURRENT_MODE
+            MoondropGaia.F_ANC_V2 -> if (f.command == MoondropGaia.C_ANC2_GET_CURRENT_MODE ||
+                f.command == MoondropGaia.C_ANC2_SET_CURRENT_MODE
             ) {
                 applyAncPayload(f.payload)
             }
-            Gaia.F_AUDIO_CURATION -> if (f.command == Gaia.C_AC_GET_CURRENT_MODE) {
+            MoondropGaia.F_AUDIO_CURATION -> if (f.command == MoondropGaia.C_AC_GET_CURRENT_MODE) {
                 applyAncPayload(f.payload)
             }
-            Gaia.F_ANC -> if (f.command == Gaia.C_ANC1_GET_ANC_STATE) applyAncPayload(f.payload)
-            Gaia.F_DAC_GAIN -> if (f.command == Gaia.C_DAC_GET_GAIN && f.payload.isNotEmpty()) {
+            MoondropGaia.F_ANC -> if (f.command == MoondropGaia.C_ANC1_GET_ANC_STATE) applyAncPayload(f.payload)
+            MoondropGaia.F_DAC_GAIN -> if (f.command == MoondropGaia.C_DAC_GET_GAIN && f.payload.isNotEmpty()) {
                 gainIndex = model.dc.gainDeviceToUi(f.payload[0].toInt() and 0xFF)
                 emit(PodEvent.GainChanged(gainIndex))
             }
-            Gaia.F_LED -> if (f.command == Gaia.C_LED_GET_STATE && f.payload.isNotEmpty()) {
+            MoondropGaia.F_LED -> if (f.command == MoondropGaia.C_LED_GET_STATE && f.payload.isNotEmpty()) {
                 ledOn = (f.payload[0].toInt() and 0xFF) == 1
                 emit(PodEvent.LedChanged(ledOn!!))
             }
-            Gaia.F_CODEC_TYPE -> if (f.command == Gaia.C_CODEC_GET_LHDC_STATE && f.payload.isNotEmpty()) {
+            MoondropGaia.F_CODEC_TYPE -> if (f.command == MoondropGaia.C_CODEC_GET_LHDC_STATE && f.payload.isNotEmpty()) {
                 // 主动/回读到的真实值都算「已确认」，统一走 applyLhdc 以刷新回退基线
                 applyLhdc((f.payload[0].toInt() and 0xFF) == 1)
             }
-            Gaia.F_ONEBRINGTWO -> if (f.command == Gaia.C_OBT_GET_STATE && f.payload.isNotEmpty()) {
+            MoondropGaia.F_ONEBRINGTWO -> if (f.command == MoondropGaia.C_OBT_GET_STATE && f.payload.isNotEmpty()) {
                 dualConnectionOn = (f.payload[0].toInt() and 0xFF) == 1
                 emit(PodEvent.DualConnectionChanged(dualConnectionOn!!))
             }
-            Gaia.F_SPATIAL_AUDIO -> if (f.payload.isNotEmpty()) {
-                // GET(1)/SET(2) = 空间音频开关；GET(3)/SET(4) = 头部追踪（命令号见 Gaia.kt）。
+            MoondropGaia.F_SPATIAL_AUDIO -> if (f.payload.isNotEmpty()) {
+                // GET(1)/SET(2) = 空间音频开关；GET(3)/SET(4) = 头部追踪（命令号见 MoondropGaia.kt）。
                 // 与其它 feature 一样，只处理 GET/SET 这两个命令号，payload 按 0/1 解读。
                 when (f.command) {
-                    Gaia.C_SPATIAL_GET_STATE, Gaia.C_SPATIAL_SET_STATE ->
+                    MoondropGaia.C_SPATIAL_GET_STATE, MoondropGaia.C_SPATIAL_SET_STATE ->
                         spatialEnabled = (f.payload[0].toInt() and 0xFF) == 1
-                    Gaia.C_SPATIAL_GET_HEAD_TRACKING, Gaia.C_SPATIAL_SET_HEAD_TRACKING ->
+                    MoondropGaia.C_SPATIAL_GET_HEAD_TRACKING, MoondropGaia.C_SPATIAL_SET_HEAD_TRACKING ->
                         headTrackingOn = (f.payload[0].toInt() and 0xFF) == 1
                 }
             }
-            Gaia.F_VOICE -> if (f.command == Gaia.C_VOICE_GET_CONF ||
-                f.command == Gaia.C_VOICE_SET_CONF
+            MoondropGaia.F_VOICE -> if (f.command == MoondropGaia.C_VOICE_GET_CONF ||
+                f.command == MoondropGaia.C_VOICE_SET_CONF
             ) {
-                Gaia.parseVoiceConf(f.payload)?.let { applyVoiceConf(it) }
+                MoondropGaia.parseVoiceConf(f.payload)?.let { applyVoiceConf(it) }
             }
-            Gaia.F_TOUCHV2 -> if (f.command == Gaia.C_TOUCHV2_GET_ACTION_CONF ||
-                f.command == Gaia.C_TOUCHV2_SET_ACTION_CONF
+            MoondropGaia.F_TOUCHV2 -> if (f.command == MoondropGaia.C_TOUCHV2_GET_ACTION_CONF ||
+                f.command == MoondropGaia.C_TOUCHV2_SET_ACTION_CONF
             ) {
                 // 读回与写入回显都是同一份 5 字节配置
-                Gaia.parseGestureConf(f.payload)?.let { applyGestureConf(it.slots) }
+                MoondropGaia.parseGestureConf(f.payload)?.let { applyGestureConf(it.slots) }
             }
-            Gaia.F_BASIC -> if (f.command == Gaia.C_BASIC_GET_SUPPORTED_FEATURES) {
+            MoondropGaia.F_BASIC -> if (f.command == MoondropGaia.C_BASIC_GET_SUPPORTED_FEATURES) {
                 // request() 已经消费；这里只做通知型位图的增量合并
                 capabilities = capabilities.copy(
-                    features = capabilities.features + Gaia.parseSupportedFeaturesSmart(f.payload),
+                    features = capabilities.features + MoondropGaia.parseSupportedFeaturesSmart(f.payload),
                 )
             }
         }

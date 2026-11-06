@@ -47,6 +47,8 @@
  */
 package moe.huime.moonpods.noroot
 
+import moe.huime.moonpods.pods.moondrop.MoondropGaia
+
 /** 电量为未知/无该组件时的哨兵值。 */
 const val BATTERY_UNKNOWN = -1
 
@@ -103,10 +105,10 @@ class BatteryState {
     val currentCase: BatterySlot get() = rawCase
 
     fun slotOf(component: Int): BatterySlot = when (component) {
-        Gaia.BATTERY_SINGLE -> single
-        Gaia.BATTERY_LEFT -> rawLeft
-        Gaia.BATTERY_RIGHT -> rawRight
-        Gaia.BATTERY_CASE -> rawCase
+        MoondropGaia.BATTERY_SINGLE -> single
+        MoondropGaia.BATTERY_LEFT -> rawLeft
+        MoondropGaia.BATTERY_RIGHT -> rawRight
+        MoondropGaia.BATTERY_CASE -> rawCase
         else -> BatterySlot.UNKNOWN
     }
 
@@ -124,22 +126,22 @@ class BatteryState {
             if (p.size < 2) continue
             val type = p[0]
             val raw = p[1]
-            if (raw < 0 || raw == Gaia.BATTERY_LEVEL_UNKNOWN) continue
+            if (raw < 0 || raw == MoondropGaia.BATTERY_LEVEL_UNKNOWN) continue
             val level = raw.coerceIn(0, 100)
             when (type) {
-                Gaia.BATTERY_SINGLE -> {
+                MoondropGaia.BATTERY_SINGLE -> {
                     if (single.level != level || single.charging != charging) changed = true
                     single = BatterySlot(level, charging, true)
                 }
-                Gaia.BATTERY_LEFT -> {
+                MoondropGaia.BATTERY_LEFT -> {
                     if (rawLeft.level != level || rawLeft.charging != charging) changed = true
                     rawLeft = BatterySlot(level, charging, true)
                 }
-                Gaia.BATTERY_RIGHT -> {
+                MoondropGaia.BATTERY_RIGHT -> {
                     if (rawRight.level != level || rawRight.charging != charging) changed = true
                     rawRight = BatterySlot(level, charging, true)
                 }
-                Gaia.BATTERY_CASE -> {
+                MoondropGaia.BATTERY_CASE -> {
                     if (rawCase.level != level || rawCase.charging != charging) changed = true
                     rawCase = BatterySlot(level, charging, true)
                 }
@@ -153,10 +155,10 @@ class BatteryState {
     /** 充电状态独立更新（部分固件把充电位放在单独通知里）。 */
     fun setCharging(component: Int, charging: Boolean) {
         when (component) {
-            Gaia.BATTERY_SINGLE -> single = single.copy(charging = charging)
-            Gaia.BATTERY_LEFT -> rawLeft = rawLeft.copy(charging = charging)
-            Gaia.BATTERY_RIGHT -> rawRight = rawRight.copy(charging = charging)
-            Gaia.BATTERY_CASE -> rawCase = rawCase.copy(charging = charging)
+            MoondropGaia.BATTERY_SINGLE -> single = single.copy(charging = charging)
+            MoondropGaia.BATTERY_LEFT -> rawLeft = rawLeft.copy(charging = charging)
+            MoondropGaia.BATTERY_RIGHT -> rawRight = rawRight.copy(charging = charging)
+            MoondropGaia.BATTERY_CASE -> rawCase = rawCase.copy(charging = charging)
         }
     }
 
@@ -213,7 +215,7 @@ object BatteryCodec {
 
     /** 兜底查询集合：按 type 从小到大（单设备在前）。 */
     val FALLBACK_QUERY_IDS = intArrayOf(
-        Gaia.BATTERY_SINGLE, Gaia.BATTERY_LEFT, Gaia.BATTERY_RIGHT, Gaia.BATTERY_CASE,
+        MoondropGaia.BATTERY_SINGLE, MoondropGaia.BATTERY_LEFT, MoondropGaia.BATTERY_RIGHT, MoondropGaia.BATTERY_CASE,
     )
 
     /**
@@ -222,12 +224,12 @@ object BatteryCodec {
      *   2) 拿到支持的 type 后，用 cmd 1 + type 列表查询电量
      *   3) 若设备不回 cmd 0，回退用 FALLBACK_QUERY_IDS
      */
-    fun buildSupportedQuery(): ByteArray = Gaia.batteryGetAllV4()
+    fun buildSupportedQuery(): ByteArray = MoondropGaia.batteryGetAllV4()
 
-    fun buildLevelsQuery(ids: IntArray): ByteArray = Gaia.batteryGet(ids)
+    fun buildLevelsQuery(ids: IntArray): ByteArray = MoondropGaia.batteryGet(ids)
 
     /** 老固件（GAIA V3）用 cmd 1 无 payload 查全部。 */
-    fun buildLegacyQuery(): ByteArray = Gaia.batteryGetAll()
+    fun buildLegacyQuery(): ByteArray = MoondropGaia.batteryGetAll()
 
     /**
      * 解析 `cmd 0`（GetSupported）的响应：payload 就是 type 列表。
@@ -280,7 +282,7 @@ object BatteryCodec {
     }
 
     /** 合法电池 type：0=单设备 1=左 2=右 3=盒 */
-    fun isKnownBatteryId(id: Int): Boolean = id in Gaia.BATTERY_SINGLE..Gaia.BATTERY_CASE
+    fun isKnownBatteryId(id: Int): Boolean = id in MoondropGaia.BATTERY_SINGLE..MoondropGaia.BATTERY_CASE
 
     /** 合法电量：0..100。255（无数据）等标记被排除。 */
     fun isPlausibleLevel(level: Int): Boolean = level in 0..100
