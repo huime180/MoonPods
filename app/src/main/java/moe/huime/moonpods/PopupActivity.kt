@@ -378,6 +378,10 @@ private fun PopupContent(
             setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         })
+        context.sendBroadcast(Intent(MoonPodsAction.REQUEST_CAPABILITIES).apply {
+            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+        })
         context.sendBroadcast(Intent(MoonPodsAction.ACTION_REFRESH_STATUS).apply {
             setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)

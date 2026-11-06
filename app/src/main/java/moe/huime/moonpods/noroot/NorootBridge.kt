@@ -127,7 +127,18 @@ object NorootBridge : PodListener {
                         MoonPodsAction.HEAD_TRACKING_SELECT ->
                             MoondropLink.setHeadTracking(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
                         MoonPodsAction.UI_INIT,
-                        MoonPodsAction.REQUEST_CAPABILITIES -> MoondropLink.refreshAll()
+                        MoonPodsAction.REQUEST_CAPABILITIES,
+                        MoonPodsAction.ACTION_REFRESH_STATUS -> {
+                            // 弹窗/页面打开时会先问一次：立刻回放当前快照（否则界面是空的），
+                            // 再异步刷新一次真实状态。
+                            val snap = runCatching { MoondropLink.snapshot() }.getOrNull()
+                            if (snap?.connected == true) {
+                                lastBroadcast = null
+                                broadcastState(snap)
+                                NorootNotification.postSimple(appContext ?: ctx, snap)
+                            }
+                            MoondropLink.refreshAll()
+                        }
                         MoonPodsAction.REQUEST_BATTERY -> MoondropLink.requestBatteryRefresh()
                         MoonPodsAction.REQUEST_GESTURE -> {
                             // 打开手势页时读一次：读回来会以 GestureChanged 事件回灌
@@ -145,7 +156,6 @@ object NorootBridge : PodListener {
                                 MoondropLink.setGesture(slots[slot], ears[ear], actionId)
                             }
                         }
-                        MoonPodsAction.ACTION_REFRESH_STATUS -> MoondropLink.refreshAll()
                         MoonPodsAction.ACTION_CONNECT_POD_REQUEST -> {
                             val device = intent.getParcelableExtra("device", BluetoothDevice::class.java)
                             if (device != null) MoondropLink.connect(device)
