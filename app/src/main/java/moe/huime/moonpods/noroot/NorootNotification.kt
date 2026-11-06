@@ -175,7 +175,7 @@ object NorootNotification {
     // ── 通知本体 ─────────────────────────────────────────────────────────────
 
     /** 建/校正通道，然后 notify。内容与大图都与上一条相同则跳过（见 [lastRendered] / [lastIcon]）。 */
-    private suspend fun post(context: Context, snapshot: PodSnapshot) {
+    private suspend fun postInternal(context: Context, snapshot: PodSnapshot) {
         val title = titleOf(context, snapshot)
         val content = contentOf(context, snapshot)
         val rendered = "$title\n$content"
@@ -219,14 +219,14 @@ object NorootNotification {
             if (icon != null) builder.setLargeIcon(icon.bitmap)
             // 通知动作「断开连接」：与 dev 仓库蓝牙通知里那个按钮同一套语义（动作按钮，不是
             // 「点通知本体」）。焦点通知那条路走模板动作栏（param_v2.actions，见
-            // PodFocusNotification），普通通知那条路走 Notification.Builder.addAction ——
+            // NorootFocusNotification），普通通知那条路走 Notification.Builder.addAction ——
             // 两条都挂同一个 PendingIntent，落到 pods/PodDisconnectReceiver。
             val disconnectLabel = context.getString(R.string.notification_disconnect)
             val disconnectTarget = disconnectIntent(context)
             // HyperOS 焦点通知 / 超级岛：带上 MIUI 认的那套 extra（普通 ROM 会忽略，通知照常）。
             // 岛就挂在这条常驻通知上（2026-09 起不再有单独的临时岛通知）；图片与 largeIcon 用同一张
             // 机型图，拿不到图时 buildExtras 返回 null，这里就不带 extras。
-            PodFocusNotification.buildExtras(
+            NorootFocusNotification.buildExtras(
                 context = context,
                 titleText = title,
                 contentText = content.replace('\n', ' ').trim(),
@@ -267,24 +267,24 @@ object NorootNotification {
     }
 
     /**
-     * 通知大图 = 这台设备的机型图（pods/PodImageStore，按设备地址落盘）；没有就返回 null。
+     * 通知大图 = 这台设备的机型图（pods/NorootImageStore，按设备地址落盘）；没有就返回 null。
      *
      * 线程：解码是文件 IO，**绝不能落在主线程**。[onSnapshot] 的整段判定跑在
      * [scope]（Dispatchers.Default）里，这里再显式切一次 Dispatchers.IO，别把解码压在
      * 并发度有限的 Default 线程池上。
      *
-     * 缓存：结果按「地址 + 图片版本号」记住（[PodImageStore.revision] 在换图/恢复默认时会 +1），
+     * 缓存：结果按「地址 + 图片版本号」记住（[NorootImageStore.revision] 在换图/恢复默认时会 +1），
      * 所以每 30s 一轮的电量轮询不会重复解码同一张图；换图后 key 变了会重新读一次。
-     * 这里用 [PodImageStore.loadBitmap]（与详情页英雄图同一张、全尺寸解码）：一台设备只留一张，
+     * 这里用 [NorootImageStore.loadBitmap]（与详情页英雄图同一张、全尺寸解码）：一台设备只留一张，
      * 且详情页本来也会持有同一张图，不额外做降采样。
      */
     private suspend fun largeIconFor(context: Context, snapshot: PodSnapshot): LargeIcon? {
         val address = snapshot.deviceAddress
         if (address.isBlank()) return null
-        val key = "$address@${PodImageStore.revision}"
+        val key = "$address@${NorootImageStore.revision}"
         lastIcon?.takeIf { it.key == key }?.let { return it }
         val bitmap = withContext(Dispatchers.IO) {
-            runCatching { PodImageStore.loadBitmap(context, address) }.getOrNull()
+            runCatching { NorootImageStore.loadBitmap(context, address) }.getOrNull()
         } ?: return null
         val icon = LargeIcon(key, bitmap)
         lastIcon = icon
