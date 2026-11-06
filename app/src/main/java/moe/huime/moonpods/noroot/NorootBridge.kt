@@ -165,7 +165,11 @@ object NorootBridge : PodListener {
         }
         lastBroadcast = snap
         Log.i(TAG, "broadcast state: anc=${snap.ancIndex}/${snap.ancModes.size} gain=${snap.gainIndex} led=${snap.ledOn} lhdc=${snap.lhdcOn} dual=${snap.dualConnectionOn}")
-        broadcastState(snap)
+        // 通知先发：广播链路任何一环抛异常都不该让通知丢失（之前就是这个顺序问题）
+        runCatching { NorootNotification.post(appContext ?: return, snap) }
+            .onFailure { Log.w(TAG, "notification post failed", it) }
+        runCatching { broadcastState(snap) }
+            .onFailure { Log.w(TAG, "state broadcast failed", it) }
         if (event is PodEvent.Connected) {
             // 连上后把全部功能读一遍：快照里 gain/led/prompt/lhdc/dual 读到之前是 null，
             // 不读的话界面就只有降噪一个控件。
@@ -280,7 +284,6 @@ object NorootBridge : PodListener {
                 i.putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         }
-        NorootNotification.post(ctx, snap)
     }
 
     /** 连接弹窗：仅在授予「显示在其他应用上层」时尝试，失败只记日志。 */
