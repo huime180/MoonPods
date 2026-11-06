@@ -221,6 +221,31 @@ object NorootBridge : PodListener {
             ))
         }
 
+        // 能力位：UI 靠它决定显示哪些控件（增益/指示灯/提示音/LHDC/双设备/手势）。
+        // 没有这条广播时界面就只剩降噪一项。
+        val caps = snap.capabilities
+        if (caps.probed) {
+            val bundle = android.os.Bundle().apply {
+                putBoolean("probed", caps.probed)
+                putBoolean("hasGain", caps.hasGain)
+                putBoolean("hasLed", caps.hasLed)
+                putBoolean("hasPromptTone", caps.hasPromptTone)
+                putBoolean("hasPromptVolume", caps.hasPromptVolume)
+                putBoolean("hasLhdc", caps.hasLhdc)
+                putBoolean("hasDualConnection", caps.hasDualConnection)
+                putBoolean("hasGestures", caps.hasGestures)
+                putBoolean("hasAdaptive", snap.ancModes.any { it.id == "adaptive" })
+                putBoolean("hasSpatial", caps.hasSpatial)
+                putBoolean("hasHeadTracking", caps.hasHeadTracking)
+                putStringArrayList("gainLabels", ArrayList(snap.gainLabels))
+                putInt("promptVolumeMax", snap.promptVolumeMax)
+            }
+            send(MoonPodsAction.CAPABILITIES_CHANGED) { i ->
+                i.putExtra(MoonPodsAction.EXTRA_CAPS_BUNDLE, bundle)
+                i.putExtra(MoonPodsAction.EXTRA_MODEL_NAME, snap.modelName.ifBlank { snap.deviceName })
+            }
+        }
+
         if (snap.ancIndex >= 0 && snap.ancModes.isNotEmpty()) {
             send(MoonPodsAction.ANC_CHANGED) { i ->
                 i.putExtra(MoonPodsAction.EXTRA_STATUS, snap.ancIndex)
