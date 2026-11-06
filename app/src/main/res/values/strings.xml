@@ -44,7 +44,7 @@
     <string name="more_click_action_summary">Choose where tapping \"More\" in the module popup opens</string>
     <string name="notification_click_module_popup">Module popup</string>
     <string name="click_action_system_settings">System Settings</string>
-    <string name="click_action_heytap">HeyTap Headset</string>
+    <string name="click_action_official">Moondrop app</string>
     <string name="click_action_module">Module</string>
     <string name="enabled">On</string>
     <string name="off">Off</string>
@@ -81,16 +81,9 @@
     <string name="custom_image_selected">Custom image selected</string>
     <string name="custom_image_default">Use default image</string>
     <string name="custom_image_restore_default">Restore default image</string>
-    <string name="import_melody_images">Import Images</string>
-    <string name="import_melody_images_summary">Import model images from HeyTap Headset</string>
-    <string name="import_melody_images_hint">Please connect the earphones once in HeyTap Headset first.</string>
-    <string name="import_melody_images_empty">No HeyTap Headset model images found.</string>
-    <string name="import_melody_images_root_required">Please check ROOT permission.</string>
-    <string name="import_melody_images_action">Import All</string>
+    <string name="import_images">Import Images</string>
     <string name="import_source_title">Import Images</string>
     <string name="import_source_summary">Choose an image source</string>
-    <string name="import_source_melody_title">Import from HeyTap Headset</string>
-    <string name="import_source_melody_summary">OPPO / OnePlus: read the model images HeyTap Headset already downloaded (needs ROOT, and one connection in HeyTap Headset first)</string>
     <string name="import_source_official_title">Import from MOONDROP App</string>
     <string name="import_source_official_summary">MOONDROP: take the images straight from the official product catalogue (no ROOT, no app install needed)</string>
     <string name="official_import_title">MOONDROP Official Images</string>

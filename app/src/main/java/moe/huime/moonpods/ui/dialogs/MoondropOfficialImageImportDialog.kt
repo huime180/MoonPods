@@ -1,7 +1,7 @@
 /*
  * HyperPods — 「从水月雨官方 App 导入图片」对话框
  *
- * 与欢律那条（MelodyImageImportDialog）并列的第二条图片导入来源：那条要 ROOT + 先用欢律连一次，
+ * 图片导入来源：水月雨官方 App 的公开产品目录/图床
  * 这条直接按 MOONDROP 官方产品目录取图（见 utils/MoondropOfficialImages.kt 的说明），
  * 不需要 ROOT、也不需要先装官方 App。
  *
@@ -13,7 +13,7 @@
  *     **真正组合出来的行**懒加载官方小图（thumbnailPath，128px 采样 + LruCache），没下到时用占位图；
  *     上方那张「选中项大预览」仍只为当前选中项下载一张 [MoondropOfficialProduct.boxPath] 大图；
  *   · 官方图不一定三张齐全（很多机型没有左/右耳图），所以导入要求拿到 **BOX**，
- *     左/右耳图有就一起导入 —— 不像欢律那条要求三张齐全。
+ *     左/右耳图有就一起导入 —— 不像旧实现那样要求三张齐全。
  */
 package moe.huime.moonpods.ui.dialogs
 

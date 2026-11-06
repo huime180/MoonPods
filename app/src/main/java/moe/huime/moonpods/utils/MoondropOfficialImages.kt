@@ -1,8 +1,8 @@
 /*
  * HyperPods — 水月雨（MOONDROP）官方产品图来源
  *
- * 为什么需要它：耳机页右上角的「导入图片」原来只有欢律（OPPO）一条来源 ——
- * 那条路必须先装欢律、并在欢律里连过一次耳机，再由模块用 ROOT 去读它私有目录里
+ * 为什么需要它：耳机页右上角的「导入图片」原来只有水月雨官方 App（OPPO）一条来源 ——
+ * 那条路必须先装水月雨官方 App、并在水月雨官方 App里连过一次耳机，再由模块用 ROOT 去读它私有目录里
  * 下载好的机型图（`melody-model-download/control_<id>/res/image/img_<name>.png`）。
  *
  * 水月雨这边不必这么绕：官方 App（com.moondroplab.moondrop.moondrop_app）自己就是从公开图床
@@ -18,7 +18,7 @@
  *             兜底 `bannerImgV2`（1388×640，0% 透明 —— 那是带底 banner）→ 方形图 → sellpic；
  *   · LEFT  ← `bannerImgLT`  1125×597，88% 透明，透明左耳；深色版 `bannerImgNightLT` 兜底；
  *   · RIGHT ← `bannerImgRT`  同上，右耳。
- *   ⚠ 左右耳按官方字段字面映射（LT→LEFT / RT→RIGHT）。欢律那条路是**反着**映射的
+ *   ⚠ 左右耳按官方字段字面映射（LT→LEFT / RT→RIGHT）。水月雨官方 App那条路是**反着**映射的
  *     （MelodyImageImportDialog 里 LEFT 取的是 rightPath），说明两家的命名视角不一定一致；
  *     这里没有真机可比对，若实机发现左右反了，改这两个取路径的函数即可。
  *

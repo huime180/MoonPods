@@ -98,7 +98,7 @@ fun SettingsPage(
     val notificationClickActionOptions = listOf(
         stringResource(R.string.notification_click_module_popup),
         stringResource(R.string.click_action_system_settings),
-        stringResource(R.string.click_action_heytap),
+        stringResource(R.string.click_action_official),
     )
     val moreClickActionValues = listOf(
         ConfigManager.MORE_CLICK_HEYTAP,
@@ -106,7 +106,7 @@ fun SettingsPage(
         ConfigManager.MORE_CLICK_MODULE,
     )
     val moreClickActionOptions = listOf(
-        stringResource(R.string.click_action_heytap),
+        stringResource(R.string.click_action_official),
         stringResource(R.string.click_action_system_settings),
         stringResource(R.string.click_action_module),
     )

@@ -11,7 +11,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <queries>
-        <package android:name="com.heytap.headset" />
+        <package android:name="com.moondroplab.moondrop.moondrop_app" />
         <package android:name="com.android.settings" />
     </queries>
 

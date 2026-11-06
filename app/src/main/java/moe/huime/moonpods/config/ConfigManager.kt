@@ -46,8 +46,8 @@ object ConfigManager {
     const val ISLAND_SHOW_TIMING_IN_CASE = 3
     const val NOTIFICATION_CLICK_MODULE_POPUP = 0
     const val NOTIFICATION_CLICK_SYSTEM_SETTINGS = 1
-    const val NOTIFICATION_CLICK_HEYTAP = 2
-    const val MORE_CLICK_HEYTAP = 0
+    const val NOTIFICATION_CLICK_OFFICIAL = 2
+    const val MORE_CLICK_OFFICIAL = 0
     const val MORE_CLICK_SYSTEM_SETTINGS = 1
     const val MORE_CLICK_MODULE = 2
     const val SPATIAL_AUDIO_OFF = 0
@@ -89,9 +89,9 @@ object ConfigManager {
 
     fun islandShowTimings(): Set<Int> = current().islandShowTimings.normalizedIslandShowTimings()
 
-    fun notificationClickAction(): Int = current().notificationClickAction.coerceIn(NOTIFICATION_CLICK_MODULE_POPUP, NOTIFICATION_CLICK_HEYTAP)
+    fun notificationClickAction(): Int = current().notificationClickAction.coerceIn(NOTIFICATION_CLICK_MODULE_POPUP, NOTIFICATION_CLICK_OFFICIAL)
 
-    fun moreClickAction(): Int = current().moreClickAction.coerceIn(MORE_CLICK_HEYTAP, MORE_CLICK_MODULE)
+    fun moreClickAction(): Int = current().moreClickAction.coerceIn(MORE_CLICK_OFFICIAL, MORE_CLICK_MODULE)
 
     fun milinkCardFeatures(): Set<Int> = current().milinkCardFeatures.normalizedMilinkCardFeatures()
 
@@ -127,12 +127,12 @@ object ConfigManager {
     }
 
     fun updateNotificationClickAction(prefs: SharedPreferences, service: XposedService?, action: Int) {
-        val config = current().copy(notificationClickAction = action.coerceIn(NOTIFICATION_CLICK_MODULE_POPUP, NOTIFICATION_CLICK_HEYTAP))
+        val config = current().copy(notificationClickAction = action.coerceIn(NOTIFICATION_CLICK_MODULE_POPUP, NOTIFICATION_CLICK_OFFICIAL))
         save(prefs, service, config)
     }
 
     fun updateMoreClickAction(prefs: SharedPreferences, service: XposedService?, action: Int) {
-        val config = current().copy(moreClickAction = action.coerceIn(MORE_CLICK_HEYTAP, MORE_CLICK_MODULE))
+        val config = current().copy(moreClickAction = action.coerceIn(MORE_CLICK_OFFICIAL, MORE_CLICK_MODULE))
         save(prefs, service, config)
     }
 
@@ -202,7 +202,7 @@ object ConfigManager {
         val config = raw?.let {
             runCatching { json.decodeFromString(AppConfig.serializer(), it) }.getOrNull()
         } ?: AppConfig()
-        val migratedMoreClickAction = if (prefs.getBoolean("open_heytap", false)) MORE_CLICK_HEYTAP else config.moreClickAction
+        val migratedMoreClickAction = if (prefs.getBoolean("open_official", false)) MORE_CLICK_OFFICIAL else config.moreClickAction
         if (!directFakeDeviceId.isNullOrBlank()) {
             return config.copy(
                 fakeDeviceId = directFakeDeviceId.normalizedFakeDeviceId(),
@@ -234,8 +234,8 @@ object ConfigManager {
         logLevel = logLevel.coerceIn(LOG_LEVEL_OFF, LOG_LEVEL_DEBUG),
         islandMode = islandMode.coerceIn(ISLAND_MODE_NONE, ISLAND_MODE_MODULE),
         islandShowTimings = islandShowTimings.normalizedIslandShowTimings(),
-        notificationClickAction = notificationClickAction.coerceIn(NOTIFICATION_CLICK_MODULE_POPUP, NOTIFICATION_CLICK_HEYTAP),
-        moreClickAction = moreClickAction.coerceIn(MORE_CLICK_HEYTAP, MORE_CLICK_MODULE),
+        notificationClickAction = notificationClickAction.coerceIn(NOTIFICATION_CLICK_MODULE_POPUP, NOTIFICATION_CLICK_OFFICIAL),
+        moreClickAction = moreClickAction.coerceIn(MORE_CLICK_OFFICIAL, MORE_CLICK_MODULE),
         milinkCardFeatures = milinkCardFeatures.normalizedMilinkCardFeatures(),
     )
 

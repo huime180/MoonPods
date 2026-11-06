@@ -38,8 +38,6 @@ import moe.huime.moonpods.pods.NoiseControlMode
 import moe.huime.moonpods.pods.WearStatus
 import moe.huime.moonpods.ui.dialogs.RestartScope
 import moe.huime.moonpods.ui.dialogs.RestartScopeDialog
-import moe.huime.moonpods.ui.dialogs.ImageImportSourceDialog
-import moe.huime.moonpods.ui.dialogs.MelodyImageImportDialog
 import moe.huime.moonpods.ui.dialogs.MoondropOfficialImageImportDialog
 import moe.huime.moonpods.ui.dialogs.PodImageConfigDialog
 import moe.huime.moonpods.ui.pages.EarphonesTabPage
@@ -156,9 +154,7 @@ internal fun MainTabsScaffold(
         it.address.equals(connectedDeviceAddress, ignoreCase = true)
     }
     var showPodImageDialog by remember { mutableStateOf(false) }
-    var showMelodyImportDialog by remember { mutableStateOf(false) }
-    // 右上角 Import 图标先问来源（欢律 / 水月雨官方），两条来源的前置条件完全不同
-    var showImageSourceDialog by remember { mutableStateOf(false) }
+    // 右上角 Import 图标直接打开「从水月雨官方 App 导入」
     var showOfficialImportDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedTab) {
@@ -258,7 +254,7 @@ internal fun MainTabsScaffold(
                         onDeviceDisconnect = onDeviceDisconnect,
                         onDismissConnectError = onDismissConnectError,
                         onBackToDevicePicker = onBackToDevicePicker,
-                        onOpenMelodyImport = { showImageSourceDialog = true },
+                        onOpenMelodyImport = { showOfficialImportDialog = true },
                         onOpenPodImageConfig = { showPodImageDialog = true },
                         onOpenSystemHeadsetSettings = onOpenSystemHeadsetSettings,
                     )
@@ -290,7 +286,7 @@ internal fun MainTabsScaffold(
             if (isLandscapeDetail) {
                 LandscapeDetailActions(
                     onBackToDevicePicker = onBackToDevicePicker,
-                    onOpenMelodyImport = { showImageSourceDialog = true },
+                    onOpenMelodyImport = { showOfficialImportDialog = true },
                     onOpenPodImageConfig = { showPodImageDialog = true },
                     onOpenSystemHeadsetSettings = onOpenSystemHeadsetSettings,
                 )
@@ -313,30 +309,6 @@ internal fun MainTabsScaffold(
             onSave = { address, name, images, clearedImages ->
                 onSavePodImages(address, name, images, clearedImages)
                 showPodImageDialog = false
-            },
-        )
-
-        MelodyImageImportDialog(
-            show = showMelodyImportDialog,
-            currentAddress = connectedDeviceAddress,
-            currentName = displayTitle,
-            onDismissRequest = { showMelodyImportDialog = false },
-            onImport = { address, name, images ->
-                onSavePodImageBytes(address, name, images)
-                showMelodyImportDialog = false
-            },
-        )
-
-        ImageImportSourceDialog(
-            show = showImageSourceDialog,
-            onDismissRequest = { showImageSourceDialog = false },
-            onOpenMelodyImport = {
-                showImageSourceDialog = false
-                showMelodyImportDialog = true
-            },
-            onOpenMoondropImport = {
-                showImageSourceDialog = false
-                showOfficialImportDialog = true
             },
         )
 
@@ -600,7 +572,7 @@ private fun LandscapeDetailActions(
         ) {
             Icon(
                 imageVector = MiuixIcons.Import,
-                contentDescription = stringResource(R.string.import_melody_images),
+                contentDescription = stringResource(R.string.import_images),
             )
         }
         IconButton(
@@ -639,7 +611,7 @@ private fun EarphoneDetailActions(
     IconButton(onClick = onOpenMelodyImport) {
         Icon(
             imageVector = MiuixIcons.Import,
-            contentDescription = stringResource(R.string.import_melody_images),
+            contentDescription = stringResource(R.string.import_images),
         )
     }
     IconButton(onClick = onOpenPodImageConfig) {

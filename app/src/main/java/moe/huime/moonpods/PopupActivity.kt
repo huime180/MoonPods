@@ -125,14 +125,14 @@ class PopupActivity : ComponentActivity() {
     private fun openNotificationTarget(action: Int, bluetoothDevice: BluetoothDevice?) {
         when (action) {
             ConfigManager.NOTIFICATION_CLICK_SYSTEM_SETTINGS -> openSystemSettings(bluetoothDevice)
-            ConfigManager.NOTIFICATION_CLICK_HEYTAP -> openHeyTapOrModule()
+            ConfigManager.NOTIFICATION_CLICK_OFFICIAL -> openOfficialAppOrModule()
             else -> openModule()
         }
     }
 
     private fun openMoreTarget(action: Int, bluetoothDevice: BluetoothDevice?) {
         when (action) {
-            ConfigManager.MORE_CLICK_HEYTAP -> openHeyTapOrModule()
+            ConfigManager.MORE_CLICK_OFFICIAL -> openOfficialAppOrModule()
             ConfigManager.MORE_CLICK_SYSTEM_SETTINGS -> openSystemSettings(bluetoothDevice)
             else -> openModule()
         }
@@ -142,8 +142,9 @@ class PopupActivity : ComponentActivity() {
         startActivity(Intent(this, MainActivity::class.java))
     }
 
-    private fun openHeyTapOrModule() {
-        val intent = packageManager.getLaunchIntentForPackage("com.heytap.headset")
+    /** 打开水月雨官方 App；没装就回落到本模块界面。 */
+    private fun openOfficialAppOrModule() {
+        val intent = packageManager.getLaunchIntentForPackage("com.moondroplab.moondrop.moondrop_app")
         if (intent != null) {
             startActivity(intent)
         } else {
@@ -258,7 +259,7 @@ private fun PopupContent(
     // 所以插着水月雨时这一块以前是空的。这里另开一组状态，两条线互不干扰。
     val mdAncIds = remember { mutableStateOf<List<String>>(emptyList()) }
     val mdAncIndex = remember { mutableStateOf(0) }
-    // 「游戏模式」= 低延迟音频，但它走的是 **OPPO/欢律私有协议**的一条**设备侧**命令
+    // 「游戏模式」= 低延迟音频，但它走的是 **水月雨官方 App 的私有协议**的一条**设备侧**命令
     // （pods/Packets.kt：AA 09 ... 06 01，GameModeFeature.LOW_LATENCY=0x06），能力位来自
     // OPPO 的 assets/device_models.json。水月雨线上没有对应实现（pods/moondrop 里没有任何
     // gameMode 代码；低延迟开关这个模块不做，系统侧低延迟走系统蓝牙设置页），
@@ -572,7 +573,7 @@ private fun PortraitPopupBody(
     moondropAncIds: List<String> = emptyList(),
     moondropAncIndex: Int = 0,
     onMoondropAncSelect: (Int) -> Unit = {},
-    /** 游戏模式只在 OPPO/欢律线上有意义；水月雨线没有对应实现，传 false 直接不显示这张卡。 */
+    /** 游戏模式在水月雨协议里没有对应实现，传 false 直接不显示这张卡。 */
     showGameMode: Boolean = true,
 ) {
     Column(
@@ -679,7 +680,7 @@ private fun LandscapePopupBody(
     moondropAncIds: List<String> = emptyList(),
     moondropAncIndex: Int = 0,
     onMoondropAncSelect: (Int) -> Unit = {},
-    /** 游戏模式只在 OPPO/欢律线上有意义；水月雨线没有对应实现，传 false 直接不显示这张卡。 */
+    /** 游戏模式在水月雨协议里没有对应实现，传 false 直接不显示这张卡。 */
     showGameMode: Boolean = true,
 ) {
     Row(
