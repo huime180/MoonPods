@@ -39,11 +39,8 @@ object MiBluetoothToastHook : HookContext() {
 
     override fun onHook() {
 
-        // 焦点通知总开关（对齐 OppoPods 2.2.0）：关闭后不创建/刷新通知
-        if (!ConfigManager.focusNotification()) {
-            Log.d("HyperPods", "focus notification disabled, skip MiBluetoothToastHook")
-            return
-        }
+        // 焦点通知总开关不再决定「是否挂钩」：关掉时要能撤掉已有通知、打开时要能立刻恢复，
+        // 因此挂钩始终生效，开关在每次更新通知时判断。
 
         fun deleteIntent(context: Context, bluetoothDevice: BluetoothDevice): PendingIntent? {
             val intent = Intent("com.android.bluetooth.headset.notification.cancle")
