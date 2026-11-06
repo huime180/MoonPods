@@ -20,6 +20,13 @@ class NorootConnectReceiver : BroadcastReceiver() {
         val device = runCatching {
             intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
         }.getOrNull() ?: return
+        // 断开/关闭：撤掉应用自己那条通知（进程可能已被回收，靠静态广播兜底）
+        if (state == BluetoothProfile.STATE_DISCONNECTED || state == BluetoothProfile.STATE_DISCONNECTING) {
+            if (NorootBridge.matchModel(runCatching { device.name ?: device.alias }.getOrNull()) != null) {
+                moe.huime.moonpods.noroot.NorootNotification.cancel(context.applicationContext)
+            }
+            return
+        }
         if (state != BluetoothProfile.STATE_CONNECTED) return
         // 进程可能刚被拉起：ConfigManager 缓存还没初始化时默认值是 Root，
         // 所以这里直接读一次 prefs，避免误判成 Root 而放弃连接。

@@ -175,6 +175,8 @@ object NorootNotification {
                 // 免 root 通知跟随链路生命周期：进程结束/断开后可被系统回收，不常驻
                 .setOngoing(false)
                 .setAutoCancel(true)
+                // 兜底：即使进程被回收、收不到断开事件，也不会无限期残留
+                .setTimeoutAfter(15 * 60 * 1000L)
                 .setContentIntent(contentIntent(context))
                 .apply { focusExtras?.let { addExtras(it) } }
             nm.notify(NOTIFICATION_ID, builder.build())
