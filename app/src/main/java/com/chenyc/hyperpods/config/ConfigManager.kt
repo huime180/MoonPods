@@ -62,7 +62,18 @@ object ConfigManager {
     @Volatile
     private var cachedConfig: AppConfig = AppConfig()
 
+    @Volatile private var prefsHolder: SharedPreferences? = null
+
+    /** 机型能力缓存（JSON：型号键 → 探测结果），两种模式共用。 */
+    fun capabilityCacheJson(): String? =
+        runCatching { prefsHolder?.getString("caps_cache_v1", null) }.getOrNull()
+
+    fun updateCapabilityCacheJson(json: String) {
+        runCatching { prefsHolder?.edit()?.putString("caps_cache_v1", json)?.apply() }
+    }
+
     fun init(prefs: SharedPreferences) {
+        prefsHolder = prefs
         val oldConfig = cachedConfig
         cachedConfig = readConfig(prefs, "init")
         logConfigChange("init", oldConfig, cachedConfig)
