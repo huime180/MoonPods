@@ -175,10 +175,12 @@ object MiBluetoothToastHook : HookContext() {
                 )
                 val bundle = Bundle()
                 bundle.putParcelable("Device", bluetoothDevice)
-                val intent = Intent("com.android.bluetooth.headset.notification")
-                intent.putExtra("btData", bundle)
-                intent.putExtra("disconnect", "1")
-                intent.setIdentifier("BTHeadset$address")
+                // 与页面「断开」同一个请求、同一个接收点（dispatcher）：断蓝牙 + 释放接管
+                val intent = Intent(MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST).apply {
+                    setPackage("com.android.bluetooth")
+                    putExtra("device", bluetoothDevice)
+                    setIdentifier("BTHeadset$address")
+                }
                 val disconnectAction = Notification.Action(
                     285737079,
                     context.resources.getString(miheadset_notification_Disconnect),
@@ -258,9 +260,9 @@ object MiBluetoothToastHook : HookContext() {
                             // 按钮上会冒出别的字符串（实测出现过「右耳图片」「选择点击…」）。
                             // 系统字符串与注入进程同源，不存在这个错位。
                             val disconnectLabel = context.resources.getString(miheadset_notification_Disconnect)
-                            val disconnectIntent = Intent("com.android.bluetooth.headset.notification").apply {
-                                putExtra("btData", bundle)
-                                putExtra("disconnect", "1")
+                            val disconnectIntent = Intent(MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST).apply {
+                                setPackage("com.android.bluetooth")
+                                putExtra("device", bluetoothDevice)
                                 setIdentifier("BTHeadset$address")
                             }
                             val disconnectAction = Notification.Action.Builder(
