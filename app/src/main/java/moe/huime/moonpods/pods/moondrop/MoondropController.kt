@@ -315,7 +315,9 @@ object MoondropController {
      */
     private fun currentBatteryParams(): BatteryParams {
         fun slot(slot: BatterySlot) = PodParams(
-            battery = slot.level.coerceAtLeast(0),
+            // 保留 -1（未知/离线），不要压成 0：压成 0 后 UI 会把它当成真实读数，
+            // Root 模式的离线列就会显示成 0%（实测某些固件下还会串成 2%）。
+            battery = slot.level,
             isCharging = slot.charging,
             isConnected = slot.known,
         )
