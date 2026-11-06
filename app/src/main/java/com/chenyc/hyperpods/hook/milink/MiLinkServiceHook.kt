@@ -346,9 +346,26 @@ object MiLinkServiceHook : HookContext() {
     }
 
     @Volatile private var lastLoggedAnc = Int.MIN_VALUE
+    @Volatile private var dumpedAncMethods = false
+
+    /** 一次性把 AncBatteryController 里 ANC/模式相关的方法名打出来，用于找「子档列表」入口。 */
+    private fun dumpAncMethodsOnce() {
+        if (dumpedAncMethods) return
+        val ctrl = lastAncBatteryController ?: return
+        dumpedAncMethods = true
+        runCatching {
+            val names = ctrl.javaClass.declaredMethods
+                .map { it.name }
+                .filter { it.contains("nc", ignoreCase = true) || it.contains("mode", ignoreCase = true) || it.contains("noise", ignoreCase = true) }
+                .distinct()
+                .sorted()
+            Log.i(TAG, "AncBatteryController ANC/mode methods: " + names.joinToString())
+        }.onFailure { Log.w(TAG, "dumpAncMethods failed", it) }
+    }
 
     private fun miLinkAncState(): Int {
         loadState()
+        dumpAncMethodsOnce()
         val out = miLinkAncStateInner()
         // 诊断：MIUI 每次调用 getAncState 只在新值时才打一行 ——
         // 切降噪后没有新日志 = MIUI 没重新读取（需要我们主动推刷新）；有日志但卡片没变 = 回值不对。
