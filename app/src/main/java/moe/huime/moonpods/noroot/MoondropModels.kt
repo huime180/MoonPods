@@ -184,9 +184,15 @@ object MoondropModels {
     private val ANC_4 = listOf(
         AncMode.OFF, AncMode.NOISE_CANCELLATION, AncMode.TRANSPARENCY, AncMode.ANTI_WIND,
     )
+    /**
+     * 五档的顺序按**用户界面直觉**排：关 / 自适应 / 通透 / 抗风噪 / 降噪。
+     *
+     * 设备线序（ANC V2 标准枚举）是 0 关 / 1 基础降噪 / 2 通透 / 3 抗风噪 / 4 自适应，
+     * 与 UI 顺序不同，因此各档位的 setMap/getMap 必须按模式分别给出（不能再用恒等数组）。
+     */
     private val ANC_5 = listOf(
-        AncMode.OFF, AncMode.NOISE_CANCELLATION, AncMode.TRANSPARENCY,
-        AncMode.ANTI_WIND, AncMode.ADAPTIVE,
+        AncMode.OFF, AncMode.ADAPTIVE, AncMode.TRANSPARENCY,
+        AncMode.ANTI_WIND, AncMode.NOISE_CANCELLATION,
     )
     private val ANC_3 = listOf(
         AncMode.OFF, AncMode.NOISE_CANCELLATION, AncMode.TRANSPARENCY,
@@ -234,8 +240,8 @@ object MoondropModels {
      */
     private fun ancPudding() = AncProfile(
         ANC_5,
-        intArrayOf(0, 1, 2, 3, 4),
-        intArrayOf(0, 1, 2, 3, 4),
+        intArrayOf(0, 4, 2, 3, 1),
+        intArrayOf(0, 4, 2, 3, 1),
         AncPathKind.ANC_V2,
     )
 
