@@ -108,6 +108,9 @@ object MiLinkServiceHook : HookContext() {
 
     private fun hookHeadsetRuntimeDisplay() {
         hookBluetoothDeviceResult("com.miui.headset.runtime.ProfileContext", "getDeviceId") { fakeDeviceId() }
+        // HeadsetInfo.mode 实际是 ProfileContext.getAncState 的返回值：只 hook
+        // AncBatteryController.getAncState 覆盖不到这条路径，卡片会读到旧档位。
+        hookBluetoothDeviceResult("com.miui.headset.runtime.ProfileContext", "getAncState") { miLinkAncState() }
         hookBluetoothDeviceResult("com.miui.headset.runtime.ProfileContext", "getBatteryLevel") { miLinkBatteryLevels() }
         hookBluetoothDeviceResult("com.miui.headset.runtime.AncBatteryController", "getDeviceId") { fakeDeviceId() }
         hookBluetoothDeviceResult("com.miui.headset.runtime.AncBatteryController", "getAncState") { miLinkAncState() }
@@ -200,7 +203,12 @@ object MiLinkServiceHook : HookContext() {
                     notifyHeadsetPropertyChanged(instance, device, 8)
                     notifyHeadsetPropertyChanged(instance, device, 4)
                 }
-                this.result = miLinkAncState()
+                // ⚠ 这里必须回**操作结果码** 100（OP_OK），不是降噪档位！
+                // AncBatteryController.setAncStateBlock 的返回值会被 ProfileImpl.updateHeadsetMode
+                // 当作结果码判断：100=成功，207=不支持降噪，208=非法档位，201=请求失败…
+                // 之前回 miLinkAncState()（0/1/2）→ MIUI 判定「设置失败」→ 不刷新卡片，
+                // 表现为「控制中心切了降噪没反应，退出重进才更新」。
+                this.result = 100
             }
         }.onFailure { Log.w(TAG, "hook AncBatteryController.setAncStateBlock skipped", it) }
     }
