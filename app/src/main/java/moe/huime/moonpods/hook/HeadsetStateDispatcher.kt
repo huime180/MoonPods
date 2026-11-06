@@ -144,6 +144,12 @@ object HeadsetStateDispatcher : HookContext() {
                         val device = intent.getParcelableExtra("device", BluetoothDevice::class.java) ?: return
                         if (resolveBrand(device) == null) return
                         Log.d(TAG, "disconnect request from app device=${device.address}")
+                        // 页面断开要与通知里的「断开连接」一致：断开蓝牙连接（系统特权，
+                        // 本进程位于 com.android.bluetooth 内，直接调用整机断开）。
+                        runCatching {
+                            BluetoothDevice::class.java.getMethod("disconnect").invoke(device)
+                            Log.i(TAG, "device disconnect issued for ${device.address}")
+                        }.onFailure { Log.w(TAG, "device disconnect failed", it) }
                         MoondropController.disconnect()
                     }
 
