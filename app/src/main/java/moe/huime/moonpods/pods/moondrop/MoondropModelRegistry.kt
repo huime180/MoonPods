@@ -219,10 +219,17 @@ object MoondropModelRegistry {
     )
 
     /** 布丁 PUDDING 五档：UI[关,降,透,抗,自适应] → dev [0,4,2,3,1]，走 ANC_V2 恒等读回。 */
+    /**
+     * PUDDING：ANC_V2 标准枚举直传（0 关 / 1 基础降噪 / 2 通透 / 3 抗风噪 / 4 自适应）。
+     *
+     * 历史 bug（MiuixMoondrop issue #1）：这里曾用 `[0,4,2,3,1]`，源自上游文档的错误
+     * 适配说明。真机反馈是「基础实际是抗风噪、自适应实际是基础」，官方 App 的
+     * AncV2Handler 也确认 0..5 标准枚举原样透传，因此改为恒等映射。
+     */
     private fun ancPudding() = AncProfile(
         ANC_5,
-        intArrayOf(0, 4, 2, 3, 1),
-        intArrayOf(0, 4, 2, 3, 1),
+        intArrayOf(0, 1, 2, 3, 4),
+        intArrayOf(0, 1, 2, 3, 4),
         AncPathKind.ANC_V2,
     )
 
