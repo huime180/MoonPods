@@ -201,8 +201,14 @@ object NorootBridge : PodListener {
         Log.i(TAG, "broadcast state: anc=${snap.ancIndex}/${snap.ancModes.size} gain=${snap.gainIndex} led=${snap.ledOn} lhdc=${snap.lhdcOn} dual=${snap.dualConnectionOn}")
         // 通知先发：广播链路任何一环抛异常都不该让通知丢失（之前就是这个顺序问题）
         runCatching {
-            Log.i(TAG, "request notification: ${snap.deviceName} ${snap.battery.left}/${snap.battery.right}")
-            NorootNotification.postSimple(appContext ?: return, snap)
+            // 通知总开关与 Root 模式共用同一个设置项（焦点通知开关）
+            val ctx = appContext ?: return
+            if (!moe.huime.moonpods.config.ConfigManager.focusNotification()) {
+                NorootNotification.cancel(ctx)
+            } else {
+                Log.i(TAG, "request notification: ${snap.deviceName} ${snap.battery.left}/${snap.battery.right}")
+                NorootNotification.postSimple(ctx, snap)
+            }
         }.onFailure { Log.w(TAG, "notification post failed", it) }
         runCatching { broadcastState(snap) }
             .onFailure { Log.w(TAG, "state broadcast failed", it) }
