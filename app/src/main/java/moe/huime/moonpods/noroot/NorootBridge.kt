@@ -124,7 +124,22 @@ object NorootBridge : PodListener {
                         MoonPodsAction.UI_INIT,
                         MoonPodsAction.REQUEST_CAPABILITIES -> MoondropLink.refreshAll()
                         MoonPodsAction.REQUEST_BATTERY -> MoondropLink.requestBatteryRefresh()
-                        MoonPodsAction.REQUEST_GESTURE -> Unit
+                        MoonPodsAction.REQUEST_GESTURE -> {
+                            // 打开手势页时读一次：读回来会以 GestureChanged 事件回灌
+                            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                                runCatching { MoondropLink.refreshGestures() }
+                            }
+                        }
+                        MoonPodsAction.GESTURE_SELECT -> {
+                            val slot = intent.getIntExtra(MoonPodsAction.EXTRA_GESTURE_SLOT, -1)
+                            val ear = intent.getIntExtra(MoonPodsAction.EXTRA_GESTURE_EAR, -1)
+                            val actionId = intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, -1)
+                            val slots = MoondropGaia.GestureSlot.entries
+                            val ears = MoondropGaia.Ear.entries
+                            if (slot in slots.indices && ear in ears.indices && actionId >= 0) {
+                                MoondropLink.setGesture(slots[slot], ears[ear], actionId)
+                            }
+                        }
                         MoonPodsAction.ACTION_REFRESH_STATUS -> MoondropLink.refreshAll()
                         MoonPodsAction.ACTION_CONNECT_POD_REQUEST -> {
                             val device = intent.getParcelableExtra("device", BluetoothDevice::class.java)
@@ -146,6 +161,20 @@ object NorootBridge : PodListener {
         _lastEvent.value = event
         // 逐帧的调试事件不参与状态广播：否则每来一包就发三条广播，界面会卡死
         if (event is PodEvent.Frame) return
+        if (event is PodEvent.GestureChanged) {
+            val ctx = appContext
+            if (ctx != null) {
+                val payload = runCatching { event.conf.toPayload() }.getOrNull()
+                if (payload != null) {
+                    ctx.sendBroadcast(Intent(MoonPodsAction.GESTURE_CHANGED).apply {
+                        putExtra(MoonPodsAction.EXTRA_MAC, lastDevice?.address)
+                        putExtra(MoonPodsAction.EXTRA_GESTURE_PAYLOAD, payload)
+                        setPackage(BuildConfig.APPLICATION_ID)
+                        addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                    })
+                }
+            }
+        }
         val snap = when (event) {
             is PodEvent.Connected -> event.snapshot
             PodEvent.Disconnected -> null
