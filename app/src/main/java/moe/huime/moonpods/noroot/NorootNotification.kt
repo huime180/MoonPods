@@ -346,9 +346,23 @@ object NorootNotification {
      * （见 AndroidManifest.xml 的 intent-filter），点通知直接落在快速弹窗上。
      * 必须 setPackage：命中本应用自己的组件，不受 Android 14+ 隐式 intent 限制。
      */
+    /**
+     * 点击通知的落点，与 Root 模式共用同一份设置（notificationClickAction）：
+     *   0 模块弹窗 / 1 系统蓝牙设置 / 2 水月雨官方 App。
+     * 两种模式的通知行为因此保持一致。
+     */
     private fun contentIntent(context: Context): PendingIntent? = runCatching {
-        val intent = Intent(MoonPodsAction.ACTION_PODS_UI_INIT).apply {
-            setPackage(context.packageName)
+        val action = moe.huime.moonpods.config.ConfigManager.notificationClickAction()
+        val intent = when (action) {
+            moe.huime.moonpods.config.ConfigManager.NOTIFICATION_CLICK_OFFICIAL ->
+                moe.huime.moonpods.utils.OfficialApp.launchIntent(context)
+                    ?: Intent(context, moe.huime.moonpods.PopupActivity::class.java)
+
+            moe.huime.moonpods.config.ConfigManager.NOTIFICATION_CLICK_SYSTEM_SETTINGS ->
+                Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+
+            else -> Intent(context, moe.huime.moonpods.PopupActivity::class.java)
+        }.apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         PendingIntent.getActivity(
