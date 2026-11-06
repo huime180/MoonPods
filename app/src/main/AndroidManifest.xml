@@ -58,6 +58,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!-- 免 root 模式：耳机（A2DP）连上时唤醒应用进程并直连。
+             用系统广播做入口，不起前台服务、不常驻通知。 -->
+        <receiver
+            android:name=".noroot.NorootConnectReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name=".config.PodImageProvider"
             android:authorities="moe.huime.moonpods.podimages"
