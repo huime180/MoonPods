@@ -930,6 +930,19 @@ fun MainUI(
 
     val handleFocusNotificationChange: (Boolean) -> Unit = { enabled ->
         focusNotification.value = enabled
+        // 同一开关同时控制 Root 与免 root：
+        //  Root 的 hook 读设置后自行停发/撤掉 MIUI 通知；
+        //  免 root 的通知在应用进程，这里立刻生效，不必等下一次状态事件。
+        runCatching {
+            if (!enabled) {
+                moe.huime.moonpods.noroot.NorootNotification.cancel(context)
+            } else if (ConfigManager.workMode() == ConfigManager.WORK_MODE_NOROOT) {
+                val snap = moe.huime.moonpods.noroot.NorootBridge.snapshot.value
+                if (snap?.connected == true) {
+                    moe.huime.moonpods.noroot.NorootNotification.postSimple(context, snap)
+                }
+            }
+        }
         ConfigManager.updateFocusNotification(prefs, xposedService, enabled)
         listOf("com.android.bluetooth", "com.xiaomi.bluetooth", "com.milink.service").forEach { pkg ->
             broadcastConfigChanged(context, pkg)

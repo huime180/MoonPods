@@ -148,13 +148,34 @@ object NorootNotification {
                 if (b.caseKnown) append("  C ${b.case}%")
             }.ifEmpty { context.getString(R.string.noroot_connected) }
             val title = snapshot.deviceName.ifBlank { snapshot.modelName.ifBlank { "MOONDROP" } }
+            val disconnectTarget = PendingIntent.getBroadcast(
+                context,
+                20,
+                Intent(MoonPodsAction.NOROOT_DISCONNECT).setPackage(context.packageName),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            // 焦点通知（超级岛）：与 Root 模式共用同一份构建逻辑；失败退回普通通知
+            val focusExtras = runCatching {
+                NorootFocusNotification.buildExtras(
+                    context = context,
+                    titleText = title,
+                    contentText = text,
+                    aodText = text,
+                    boxBitmap = null,
+                    disconnectIntent = disconnectTarget,
+                    disconnectLabel = context.getString(R.string.notification_disconnect),
+                )
+            }.getOrNull()
             val builder = android.app.Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_anc)
                 .setContentTitle(title)
                 .setContentText(text)
-                .setOngoing(true)
                 .setOnlyAlertOnce(true)
+                // 免 root 通知跟随链路生命周期：进程结束/断开后可被系统回收，不常驻
+                .setOngoing(false)
+                .setAutoCancel(true)
                 .setContentIntent(contentIntent(context))
+                .apply { focusExtras?.let { addExtras(it) } }
             nm.notify(NOTIFICATION_ID, builder.build())
             Log.i(TAG, "postSimple: $title / $text")
         }.onFailure { Log.w(TAG, "postSimple failed", it) }
