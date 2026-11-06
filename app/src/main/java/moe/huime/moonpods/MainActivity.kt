@@ -27,14 +27,20 @@ class MainActivity : ComponentActivity() {
         Thread { runCatching { moe.huime.moonpods.pods.moondrop.MoondropCatalog.refresh() } }.start()
         super.onCreate(savedInstanceState)
 
-        // 免 root 模式的耳机通知由本应用发：Android 13+ 需要运行时权限，打开应用时申请一次
-        if (android.os.Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
-            android.content.pm.PackageManager.PERMISSION_GRANTED
-        ) {
-            runCatching {
-                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
+        // 运行时权限：Android 12+ 的蓝牙连接/扫描（免 root 直连必需）、Android 13+ 的通知
+        val wanted = buildList {
+            if (android.os.Build.VERSION.SDK_INT >= 31) {
+                add(android.Manifest.permission.BLUETOOTH_CONNECT)
+                add(android.Manifest.permission.BLUETOOTH_SCAN)
             }
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                add(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }.filter {
+            checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        if (wanted.isNotEmpty()) {
+            runCatching { requestPermissions(wanted.toTypedArray(), 1001) }
         }
 
         setContent {

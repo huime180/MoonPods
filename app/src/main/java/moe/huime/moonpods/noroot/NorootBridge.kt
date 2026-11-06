@@ -137,16 +137,29 @@ object NorootBridge : PodListener {
         }, filter, Context.RECEIVER_EXPORTED)
     }
 
+    /** 上一次已广播的快照：内容不变就不再重复发广播（Frame 事件量大，必须去重）。 */
+    @Volatile private var lastBroadcast: PodSnapshot? = null
+
     override fun onEvent(event: PodEvent) {
         _lastEvent.value = event
+        // 逐帧的调试事件不参与状态广播：否则每来一包就发三条广播，界面会卡死
+        if (event is PodEvent.Frame) return
         val snap = when (event) {
             is PodEvent.Connected -> event.snapshot
             PodEvent.Disconnected -> null
             else -> runCatching { MoondropLink.snapshot() }.getOrNull()
         }
         _snapshot.value = snap
-        snap?.let { broadcastState(it) ?: return }
-        if (snap == null) broadcastDisconnected()
+        if (snap == null) {
+            if (lastBroadcast != null) {
+                lastBroadcast = null
+                broadcastDisconnected()
+            }
+            return
+        }
+        if (snap == lastBroadcast) return
+        lastBroadcast = snap
+        broadcastState(snap)
     }
 
     /** 把快照翻译成与 Root 模式一致的广播。 */
