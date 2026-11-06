@@ -1,7 +1,6 @@
 package moe.huime.moonpods.hook
 
 import android.content.SharedPreferences
-import android.util.Log
 import android.os.Build
 import androidx.annotation.RequiresApi
 import io.github.libxposed.api.XposedModule
@@ -19,7 +18,7 @@ class HookEntry : XposedModule() {
         // 工作模式只在这里判断一次：免 root 时完全不安装 Root 侧 hook，
         // 之后所有 hook 回调里都不需要再判断模式（避免 remote prefs 滞后导致的时好时坏）。
         if (moe.huime.moonpods.pods.WorkModeBridge.isNoRoot()) {
-            Log.i(TAG, "no-root mode: skip all hooks for ${param.packageName}")
+            android.util.Log.i(TAG, "no-root mode: skip all hooks for ${param.packageName}")
             return
         }
 

@@ -363,7 +363,7 @@ object MoondropModels {
         // 云端目录复用 Root 模式那一份（pods/moondrop/MoondropCatalog），避免两套目录漂移
         RootMoondropCatalog.resolve(deviceName)?.let {
             return withRootCalibration(
-                catalogModel(MoondropCatalog.Entry(name = it.name, key = it.key, chipRoot = it.chipRoot)),
+                catalogModel(moe.huime.moonpods.pods.moondrop.MoondropCatalog.Entry(name = it.name, key = it.key, chipRoot = it.chipRoot)),
                 deviceName,
             )
         }
@@ -420,7 +420,7 @@ object MoondropModels {
     /** 云端目录命中时构造的「官方认识、本地无档案」的型号：功能全靠能力探测。 */
     private val CATALOG_CACHE = HashMap<String, MoondropModel>()
 
-    private fun catalogModel(entry: MoondropCatalog.Entry): MoondropModel =
+    private fun catalogModel(entry: moe.huime.moonpods.pods.moondrop.MoondropCatalog.Entry): MoondropModel =
         CATALOG_CACHE.getOrPut(entry.key) {
             MoondropModel(
                 id = "catalog_" + entry.key.lowercase().replace(' ', '_'),
