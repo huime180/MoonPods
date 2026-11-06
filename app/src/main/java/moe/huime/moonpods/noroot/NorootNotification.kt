@@ -278,18 +278,11 @@ object NorootNotification {
      * 这里用 [NorootImageStore.loadBitmap]（与详情页英雄图同一张、全尺寸解码）：一台设备只留一张，
      * 且详情页本来也会持有同一张图，不额外做降采样。
      */
-    private suspend fun largeIconFor(context: Context, snapshot: PodSnapshot): LargeIcon? {
-        val address = snapshot.deviceAddress
-        if (address.isBlank()) return null
-        val key = "$address@${NorootImageStore.revision}"
-        lastIcon?.takeIf { it.key == key }?.let { return it }
-        val bitmap = withContext(Dispatchers.IO) {
-            runCatching { NorootImageStore.loadBitmap(context, address) }.getOrNull()
-        } ?: return null
-        val icon = LargeIcon(key, bitmap)
-        lastIcon = icon
-        return icon
-    }
+    /**
+     * 通知大图：本模块不维护机型图库（那是独立应用的能力），因此返回 null，
+     * 通知只用小图标 + 文案。保留函数是为了与移植来源的结构一致。
+     */
+    private suspend fun largeIconFor(context: Context, snapshot: PodSnapshot): LargeIcon? = null
 
     /** 撤掉自己那条；[reason] 只进日志。始终调用 cancel（幂等），日志只在状态翻转时打一条。 */
     private fun cancelNow(context: Context, reason: String) {
