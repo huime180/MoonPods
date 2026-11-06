@@ -158,11 +158,11 @@ object NorootNotification {
                 if (b.right > 0) { if (isNotEmpty()) append("  "); append("右 ${b.right}%") }
                 if (b.case > 0) { if (isNotEmpty()) append("  "); append("盒 ${b.case}%") }
             }.ifEmpty { context.getString(R.string.noroot_connected) }
+            val title = snapshot.deviceName.ifBlank { snapshot.modelName.ifBlank { "MOONDROP" } }
             // 内容没变就不再重复 notify：否则一次状态刷新会连发十几条，通知栏闪烁
             val rendered = title + "\n" + text
             if (rendered == lastSimpleText) return
             lastSimpleText = rendered
-            val title = snapshot.deviceName.ifBlank { snapshot.modelName.ifBlank { "MOONDROP" } }
             val disconnectTarget = PendingIntent.getBroadcast(
                 context,
                 20,
