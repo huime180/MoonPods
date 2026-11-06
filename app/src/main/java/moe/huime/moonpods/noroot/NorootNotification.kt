@@ -131,6 +131,7 @@ object NorootNotification {
     fun postSimple(context: Context, snapshot: PodSnapshot) {
         runCatching {
             val nm = context.getSystemService(android.app.NotificationManager::class.java) ?: return
+            purgeLegacyChannels(context, nm)
             if (runCatching { nm.getNotificationChannel(CHANNEL_ID) }.getOrNull() == null) {
                 nm.createNotificationChannel(
                     android.app.NotificationChannel(
@@ -157,6 +158,21 @@ object NorootNotification {
             nm.notify(NOTIFICATION_ID, builder.build())
             Log.i(TAG, "postSimple: $title / $text")
         }.onFailure { Log.w(TAG, "postSimple failed", it) }
+    }
+
+
+    /** 历史版本留下的通道：删除所有与本通知同名但 id 不同的通道，避免设置页出现两条同名项。 */
+    private fun purgeLegacyChannels(context: Context, nm: android.app.NotificationManager) {
+        val label = context.getString(R.string.notification_channel_status)
+        runCatching {
+            nm.notificationChannels.forEach { channel ->
+                if (channel.id != CHANNEL_ID && channel.name.toString() == label) {
+                    nm.deleteNotificationChannel(channel.id)
+                }
+            }
+            listOf("moonpods_noroot_status", "moonpods_device_status", "hyperpods_moondrop_island")
+                .forEach { nm.deleteNotificationChannel(it) }
+        }
     }
 
     /** 兼容 bridge 的调用名。 */
