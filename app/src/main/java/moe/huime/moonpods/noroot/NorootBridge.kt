@@ -378,14 +378,8 @@ object NorootBridge : PodListener {
         val ctx = appContext ?: return
         when (moe.huime.moonpods.config.ConfigManager.connectPopup()) {
             moe.huime.moonpods.config.ConfigManager.CONNECT_POPUP_NONE -> return
-            moe.huime.moonpods.config.ConfigManager.CONNECT_POPUP_OFFICIAL -> {
-                val intent = moe.huime.moonpods.utils.OfficialApp.launchIntent(ctx)
-                    ?: Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
-                runCatching {
-                    ctx.startActivity(intent.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
-                }.onFailure { Log.w(TAG, "official popup failed", it) }
-                return
-            }
+            // 系统弹窗依赖 hook（Root），免 root 下退回模块弹窗
+            moe.huime.moonpods.config.ConfigManager.CONNECT_POPUP_OFFICIAL -> Unit
             else -> Unit
         }
         val allowed = runCatching { android.provider.Settings.canDrawOverlays(ctx) }.getOrDefault(false)

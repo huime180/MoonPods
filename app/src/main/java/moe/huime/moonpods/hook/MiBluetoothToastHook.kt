@@ -50,6 +50,18 @@ object MiBluetoothToastHook : HookContext() {
 
         @SuppressLint("WrongConstant")
         fun createPodsNotification(bluetoothDevice: BluetoothDevice?, context: Context, batteryParams: BatteryParams) {
+            // 连接弹窗：模块弹窗两种模式都支持（Root 侧由本进程拉起应用弹窗）
+            runCatching {
+                if (ConfigManager.connectPopup() == ConfigManager.CONNECT_POPUP_MODULE &&
+                    android.provider.Settings.canDrawOverlays(context)
+                ) {
+                    context.startActivity(
+                        Intent().setClassName("moe.huime.moonpods", "moe.huime.moonpods.PopupActivity")
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    )
+                }
+            }
+
             val miheadset_notification_Box = context.resources.getIdentifier("miheadset_notification_Box", "string", "com.xiaomi.bluetooth")
             val miheadset_notification_LeftEar = context.resources.getIdentifier("miheadset_notification_LeftEar", "string", "com.xiaomi.bluetooth")
             val miheadset_notification_RightEar = context.resources.getIdentifier("miheadset_notification_RightEar", "string", "com.xiaomi.bluetooth")

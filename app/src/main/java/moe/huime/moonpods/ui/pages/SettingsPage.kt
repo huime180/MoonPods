@@ -54,16 +54,28 @@ fun SettingsPage(
     onOpenTheme: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
 ) {
-    val connectPopupOptions = listOf(
-        stringResource(R.string.connect_popup_module),
-        stringResource(R.string.connect_popup_official),
-        stringResource(R.string.connect_popup_none),
-    )
-    val connectPopupValues = listOf(
-        ConfigManager.CONNECT_POPUP_MODULE,
-        ConfigManager.CONNECT_POPUP_OFFICIAL,
-        ConfigManager.CONNECT_POPUP_NONE,
-    )
+    val connectPopupOptions = if (workMode.value == ConfigManager.WORK_MODE_ROOT) {
+        listOf(
+            stringResource(R.string.connect_popup_module),
+            stringResource(R.string.connect_popup_official),
+            stringResource(R.string.connect_popup_none),
+        )
+    } else {
+        listOf(
+            stringResource(R.string.connect_popup_module),
+            stringResource(R.string.connect_popup_none),
+        )
+    }
+    // 系统弹窗依赖 hook：免 root 模式下不提供该选项
+    val connectPopupValues = if (workMode.value == ConfigManager.WORK_MODE_ROOT) {
+        listOf(
+            ConfigManager.CONNECT_POPUP_MODULE,
+            ConfigManager.CONNECT_POPUP_OFFICIAL,
+            ConfigManager.CONNECT_POPUP_NONE,
+        )
+    } else {
+        listOf(ConfigManager.CONNECT_POPUP_MODULE, ConfigManager.CONNECT_POPUP_NONE)
+    }
     val workModeOptions = listOf(
         stringResource(R.string.work_mode_root),
         stringResource(R.string.work_mode_noroot),
