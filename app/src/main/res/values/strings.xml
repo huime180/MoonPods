@@ -139,7 +139,7 @@
     <string name="connect_popup">Connection popup</string>
     <string name="connect_popup_summary">Shown when the earbuds connect</string>
     <string name="connect_popup_module">Module popup</string>
-    <string name="connect_popup_official">System / MOONDROP app</string>
+    <string name="connect_popup_official">System popup</string>
     <string name="connect_popup_none">Do not show</string>
     <string name="noroot_channel_name">Earbuds status</string>
     <string name="work_mode">Work mode</string>\n    <string name="work_mode_summary">Root: hook MIUI system apps for a native-like experience\nNo root: the app connects the earbuds itself (own notification)</string>\n    <string name="work_mode_root">Root (hook)</string>\n    <string name="work_mode_noroot">No root</string>\n    <string name="focus_notification">Focus notification</string>

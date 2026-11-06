@@ -140,7 +140,7 @@
     <string name="connect_popup">连接弹窗</string>
     <string name="connect_popup_summary">耳机连接时弹出的界面</string>
     <string name="connect_popup_module">模块弹窗</string>
-    <string name="connect_popup_official">系统页面 / MOONDROP App</string>
+    <string name="connect_popup_official">系统弹窗</string>
     <string name="connect_popup_none">不弹出</string>
     <string name="noroot_channel_name">耳机状态</string>
     <string name="work_mode">工作模式</string>\n    <string name="work_mode_summary">Root：hook 小米系统应用，复刻原生耳机体验\n免 root：应用自己连耳机（自带通知）</string>\n    <string name="work_mode_root">Root（hook）</string>\n    <string name="work_mode_noroot">免 root</string>\n    <string name="focus_notification">焦点通知</string>
