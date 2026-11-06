@@ -842,6 +842,17 @@ object MoondropController {
         publishConnected()
         refreshAll()
         startPolling()
+        // 看门狗：连上但 10 秒内没有任何电量读数 → 视为空连接，主动断开并通知 UI，
+        // 避免停留在「已连接的空设备」页（用户报的现象）。
+        runCatching {
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                kotlinx.coroutines.delay(10_000)
+                if (connected && batteryState.lastUpdateAt == 0L) {
+                    Log.w(TAG, "connect watchdog: no battery data after 10s, dropping link")
+                    disconnectInternal(notify = true)
+                }
+            }
+        }
     }
 
     /**
