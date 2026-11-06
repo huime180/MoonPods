@@ -34,6 +34,8 @@ fun SettingsPage(
     desktopIconHidden: MutableState<Boolean> = mutableStateOf(false),
     onDesktopIconHiddenChange: (Boolean) -> Unit = {},
     workMode: MutableState<Int> = mutableStateOf(ConfigManager.WORK_MODE_ROOT),
+    connectPopup: MutableState<Int> = mutableStateOf(ConfigManager.CONNECT_POPUP_MODULE),
+    onConnectPopupChange: (Int) -> Unit = {},
     onWorkModeChange: (Int) -> Unit = {},
     focusNotification: MutableState<Boolean> = mutableStateOf(true),
     onFocusNotificationChange: (Boolean) -> Unit = {},
@@ -52,6 +54,16 @@ fun SettingsPage(
     onOpenTheme: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
 ) {
+    val connectPopupOptions = listOf(
+        stringResource(R.string.connect_popup_module),
+        stringResource(R.string.connect_popup_official),
+        stringResource(R.string.connect_popup_none),
+    )
+    val connectPopupValues = listOf(
+        ConfigManager.CONNECT_POPUP_MODULE,
+        ConfigManager.CONNECT_POPUP_OFFICIAL,
+        ConfigManager.CONNECT_POPUP_NONE,
+    )
     val workModeOptions = listOf(
         stringResource(R.string.work_mode_root),
         stringResource(R.string.work_mode_noroot),
@@ -164,6 +176,13 @@ fun SettingsPage(
                     summary = stringResource(R.string.hide_desktop_icon_summary),
                     checked = desktopIconHidden.value,
                     onCheckedChange = { onDesktopIconHiddenChange(it) }
+                )
+                OverlayDropdownPreference(
+                    title = stringResource(R.string.connect_popup),
+                    summary = stringResource(R.string.connect_popup_summary),
+                    items = connectPopupOptions,
+                    selectedIndex = connectPopupValues.indexOf(connectPopup.value).coerceAtLeast(0),
+                    onSelectedIndexChange = { onConnectPopupChange(connectPopupValues[it]) }
                 )
                 OverlayDropdownPreference(
                     title = stringResource(R.string.work_mode),

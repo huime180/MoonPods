@@ -323,8 +323,27 @@ object NorootBridge : PodListener {
     }
 
     /** 连接弹窗：仅在授予「显示在其他应用上层」时尝试，失败只记日志。 */
+    /**
+     * 连接弹窗：样式跟随设置 connectPopup。
+     *   0 模块弹窗 → PopupActivity
+     *   1 官方     → MOONDROP App（未安装则退回系统蓝牙设置）
+     *   2 不弹出
+     * 只有授予「显示在其他应用上层」时才允许从后台拉起界面。
+     */
     private fun maybeShowPopup() {
         val ctx = appContext ?: return
+        when (moe.huime.moonpods.config.ConfigManager.connectPopup()) {
+            moe.huime.moonpods.config.ConfigManager.CONNECT_POPUP_NONE -> return
+            moe.huime.moonpods.config.ConfigManager.CONNECT_POPUP_OFFICIAL -> {
+                val intent = moe.huime.moonpods.utils.OfficialApp.launchIntent(ctx)
+                    ?: Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                runCatching {
+                    ctx.startActivity(intent.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+                }.onFailure { Log.w(TAG, "official popup failed", it) }
+                return
+            }
+            else -> Unit
+        }
         val allowed = runCatching { android.provider.Settings.canDrawOverlays(ctx) }.getOrDefault(false)
         if (!allowed) return
         runCatching {

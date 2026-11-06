@@ -374,8 +374,8 @@ private fun themedPainterResource(@androidx.annotation.DrawableRes id: Int): Pai
 /** 降噪族的档位 id：主排点「降噪」时，这些档位都算命中。 */
 private val ANC_NC_FAMILY = listOf("anc", "anti_wind", "adaptive")
 
-/** 降噪子档的**展示顺序**（与参照实现一致：自适应 / 抗风 / 普通）。 */
-private val ANC_SUB_ORDER = listOf("adaptive", "anti_wind", "anc")
+/** 降噪子档的展示顺序：普通(基本) / 抗风 / 自适应（基本与自适应已互换）。 */
+private val ANC_SUB_ORDER = listOf("anc", "anti_wind", "adaptive")
 
 /** 通透族的档位 id（人声通透也属于通透）。 */
 private val ANC_TRANSPARENCY_FAMILY = listOf("transparent", "live")

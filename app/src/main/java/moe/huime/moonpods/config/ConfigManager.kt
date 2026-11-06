@@ -18,6 +18,8 @@ data class AppConfig(
     val autoGameMode: Boolean = false,
     /** 工作模式：Root（hook 小米系统应用，原生耳机体验）/ 免 root（应用进程自己直连）。 */
     val workMode: Int = ConfigManager.WORK_MODE_ROOT,
+    /** 连接弹窗样式：0 模块弹窗 / 1 官方（系统蓝牙页·MOONDROP App）/ 2 不弹出。 */
+    val connectPopup: Int = ConfigManager.CONNECT_POPUP_MODULE,
     /** 焦点通知总开关（对齐 OppoPods 2.2.0）：关闭后不再创建/刷新耳机通知。 */
     val focusNotification: Boolean = true,
 )
@@ -35,12 +37,18 @@ object ConfigManager {
     const val PREF_KEY_MILINK_CARD_FEATURES = "milink_card_features"
     const val PREF_KEY_AUTO_GAME_MODE = "auto_game_mode"
     const val PREF_KEY_WORK_MODE = "work_mode"
+    const val PREF_KEY_CONNECT_POPUP = "connect_popup"
     const val PREF_KEY_FOCUS_NOTIFICATION = "focus_notification"
     const val DEFAULT_FAKE_DEVICE_ID = "01010607"
     const val LOG_LEVEL_OFF = 0
     const val LOG_LEVEL_BASIC = 1
     const val LOG_LEVEL_DEBUG = 2
     /** 免 root：应用进程自己连耳机，功能一样，通知也由本应用发。 */
+    /** 连接弹窗：模块自己的弹窗 / 官方（系统页面或官方 App）/ 不弹出。 */
+    const val CONNECT_POPUP_MODULE = 0
+    const val CONNECT_POPUP_OFFICIAL = 1
+    const val CONNECT_POPUP_NONE = 2
+
     const val WORK_MODE_NOROOT = 0
     /** Root：hook 小米系统应用（蓝牙/milink/互联中心），复刻小米耳机原生体验。 */
     const val WORK_MODE_ROOT = 1
@@ -104,6 +112,12 @@ object ConfigManager {
     fun milinkCardFeatures(): Set<Int> = current().milinkCardFeatures.normalizedMilinkCardFeatures()
 
     fun autoGameMode(): Boolean = current().autoGameMode
+
+    fun connectPopup(): Int = current().connectPopup.coerceIn(CONNECT_POPUP_MODULE, CONNECT_POPUP_NONE)
+
+    fun updateConnectPopup(prefs: SharedPreferences, service: XposedService?, style: Int) {
+        save(prefs, service, current().copy(connectPopup = style.coerceIn(CONNECT_POPUP_MODULE, CONNECT_POPUP_NONE)))
+    }
 
     fun workMode(): Int = current().workMode.coerceIn(WORK_MODE_NOROOT, WORK_MODE_ROOT)
 
@@ -194,6 +208,7 @@ object ConfigManager {
             .putStringSet(PREF_KEY_MILINK_CARD_FEATURES, config.milinkCardFeatures.map(Int::toString).toSet())
             .putBoolean(PREF_KEY_AUTO_GAME_MODE, config.autoGameMode)
             .putInt(PREF_KEY_WORK_MODE, config.workMode)
+            .putInt(PREF_KEY_CONNECT_POPUP, config.connectPopup)
             .putBoolean(PREF_KEY_FOCUS_NOTIFICATION, config.focusNotification)
             .commit()
     }
@@ -214,6 +229,8 @@ object ConfigManager {
             ?.getBoolean(PREF_KEY_FOCUS_NOTIFICATION, true)
         val directWorkMode = prefs.takeIf { it.contains(PREF_KEY_WORK_MODE) }
             ?.getInt(PREF_KEY_WORK_MODE, WORK_MODE_ROOT)
+        val directConnectPopup = prefs.takeIf { it.contains(PREF_KEY_CONNECT_POPUP) }
+            ?.getInt(PREF_KEY_CONNECT_POPUP, CONNECT_POPUP_MODULE)
         val raw = prefs.getString(PREF_KEY_CONFIG_JSON, null)
         logPrefsSnapshot(source, prefs, directFakeDeviceId, raw)
         val config = raw?.let {
@@ -232,6 +249,7 @@ object ConfigManager {
                 autoGameMode = directAutoGameMode ?: config.autoGameMode,
                 focusNotification = directFocusNotification ?: config.focusNotification,
                 workMode = directWorkMode ?: config.workMode,
+            connectPopup = directConnectPopup ?: config.connectPopup,
             ).normalized()
         }
         return config.copy(
@@ -245,6 +263,7 @@ object ConfigManager {
             autoGameMode = directAutoGameMode ?: config.autoGameMode,
             focusNotification = directFocusNotification ?: config.focusNotification,
             workMode = directWorkMode ?: config.workMode,
+            connectPopup = directConnectPopup ?: config.connectPopup,
         ).normalized()
     }
 
