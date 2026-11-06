@@ -23,7 +23,7 @@ import moe.huime.moonpods.utils.SystemApisUtils.notifyAsUser
 import moe.huime.moonpods.config.ConfigManager
 import moe.huime.moonpods.utils.miuiStrongToast.data.BatteryParams
 import moe.huime.moonpods.utils.miuiStrongToast.data.batteryStatusCompat
-import moe.huime.moonpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 import moe.huime.moonpods.R
 import moe.huime.moonpods.pods.detectDeviceCapabilities
 import moe.huime.moonpods.utils.miuiStrongToast.MiuiStrongToastUtil
@@ -302,17 +302,17 @@ object MiBluetoothToastHook : HookContext() {
                                 cancelNotification(device, context)
                                 MiuiStrongToastUtil.hideOfficialToast(context)
                                 lastOfficialIslandShape = null
-                            } else if (p1?.action == HyperPodsAction.UPDATE_PODS_NOTIFICATION) {
+                            } else if (p1?.action == MoonPodsAction.UPDATE_PODS_NOTIFICATION) {
                                 // 水月雨线：电量由蓝牙进程里的控制器发来，extra 走同一个
                                 // BatteryStatusIntent helper，所以渲染路径与 OPPO 完全共用
                                 val batteryParams = p1.batteryStatusCompat() ?: return
                                 val device = p1.getParcelableExtra(
-                                    HyperPodsAction.EXTRA_DEVICE, BluetoothDevice::class.java
+                                    MoonPodsAction.EXTRA_DEVICE, BluetoothDevice::class.java
                                 )
                                 createPodsNotification(device, context, batteryParams)
-                            } else if (p1?.action == HyperPodsAction.SEND_STRONG_TOAST) {
+                            } else if (p1?.action == MoonPodsAction.SEND_STRONG_TOAST) {
                                 val batteryParams = p1.batteryStatusCompat() ?: return
-                                val address = p1.getStringExtra(HyperPodsAction.EXTRA_MAC).orEmpty()
+                                val address = p1.getStringExtra(MoonPodsAction.EXTRA_MAC).orEmpty()
                                 when (ConfigManager.islandMode()) {
                                     ConfigManager.ISLAND_MODE_MODULE ->
                                         FocusIslandUtil.showBatteryIsland(context, prefs, batteryParams, address)
@@ -322,19 +322,19 @@ object MiBluetoothToastHook : HookContext() {
                                         lastOfficialIslandShape = batteryShape(batteryParams)
                                     }
                                 }
-                            } else if (p1?.action == HyperPodsAction.CANCEL_PODS_NOTIFICATION) {
+                            } else if (p1?.action == MoonPodsAction.CANCEL_PODS_NOTIFICATION) {
                                 val device = p1.getParcelableExtra(
-                                    HyperPodsAction.EXTRA_DEVICE, BluetoothDevice::class.java
+                                    MoonPodsAction.EXTRA_DEVICE, BluetoothDevice::class.java
                                 )
                                 // EXTRA_DEVICE 可能为空（断连时控制器已把 device 清空），
                                 // 所以同时取 EXTRA_MAC —— 通知的 tag 就是 BTHeadset<MAC>。
-                                cancelNotification(device, context, p1.getStringExtra(HyperPodsAction.EXTRA_MAC))
+                                cancelNotification(device, context, p1.getStringExtra(MoonPodsAction.EXTRA_MAC))
                                 MiuiStrongToastUtil.hideOfficialToast(context)
                                 lastOfficialIslandShape = null
-                            } else if (p1?.action == HyperPodsAction.ACTION_PODS_ANC_CHANGED) {
+                            } else if (p1?.action == MoonPodsAction.ACTION_PODS_ANC_CHANGED) {
                                 // 同步耳机实际 ANC 状态到本地缓存，确保下次循环切换时状态准确
                                 localAncMode = p1.getIntExtra("status", 1)
-                            } else if (p1?.action == HyperPodsAction.ACTION_CYCLE_ANC) {
+                            } else if (p1?.action == MoonPodsAction.ACTION_CYCLE_ANC) {
                                 // OPPO 的 RFCOMM 快照已移除：设备名直接取广播里的 EXTRA
                                 val capabilities = detectDeviceCapabilities(
                                     context = p0,
@@ -347,7 +347,7 @@ object MiBluetoothToastHook : HookContext() {
                                 }
                                 val currentIndex = cycle.indexOf(if (localAncMode in 5..8) 2 else localAncMode)
                                 localAncMode = cycle[(currentIndex + 1).floorMod(cycle.size)]
-                                Intent(HyperPodsAction.ACTION_ANC_SELECT).apply {
+                                Intent(MoonPodsAction.ACTION_ANC_SELECT).apply {
                                     putExtra("status", localAncMode)
                                     addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
                                     p0?.sendBroadcast(this)
@@ -359,17 +359,17 @@ object MiBluetoothToastHook : HookContext() {
             val intentFilter = IntentFilter("chen.action.hyperpods.sendstrongtoast")
             intentFilter.addAction("chen.action.hyperpods.updatepodsnotification")
             intentFilter.addAction("chen.action.hyperpods.cancelpodsnotification")
-            intentFilter.addAction(HyperPodsAction.ACTION_CYCLE_ANC)
-            intentFilter.addAction(HyperPodsAction.ACTION_PODS_CONNECTED)
-            intentFilter.addAction(HyperPodsAction.ACTION_PODS_DISCONNECTED)
-            intentFilter.addAction(HyperPodsAction.ACTION_PODS_ANC_CHANGED)
+            intentFilter.addAction(MoonPodsAction.ACTION_CYCLE_ANC)
+            intentFilter.addAction(MoonPodsAction.ACTION_PODS_CONNECTED)
+            intentFilter.addAction(MoonPodsAction.ACTION_PODS_DISCONNECTED)
+            intentFilter.addAction(MoonPodsAction.ACTION_PODS_ANC_CHANGED)
             // 水月雨线（协议栈在蓝牙进程，通知侧在这里渲染）
-            intentFilter.addAction(HyperPodsAction.UPDATE_PODS_NOTIFICATION)
-            intentFilter.addAction(HyperPodsAction.SEND_STRONG_TOAST)
-            intentFilter.addAction(HyperPodsAction.CANCEL_PODS_NOTIFICATION)
+            intentFilter.addAction(MoonPodsAction.UPDATE_PODS_NOTIFICATION)
+            intentFilter.addAction(MoonPodsAction.SEND_STRONG_TOAST)
+            intentFilter.addAction(MoonPodsAction.CANCEL_PODS_NOTIFICATION)
             context.registerReceiver(broadcastReceiver, intentFilter, Context.RECEIVER_EXPORTED)
             notificationReceiverRegistered = true
-            context.sendBroadcast(Intent(HyperPodsAction.ACTION_REFRESH_STATUS).apply {
+            context.sendBroadcast(Intent(MoonPodsAction.ACTION_REFRESH_STATUS).apply {
                 setPackage("com.android.bluetooth")
                 addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             })

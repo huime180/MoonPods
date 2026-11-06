@@ -3,7 +3,7 @@ package moe.huime.moonpods.pods
 import android.content.Context
 import android.content.Intent
 import moe.huime.moonpods.BuildConfig
-import moe.huime.moonpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -61,7 +61,7 @@ object RfcommLog {
     }
 
     private fun Context.sendRfcommLog(entry: Entry) {
-        Intent(HyperPodsAction.ACTION_RFCOMM_LOG).apply {
+        Intent(MoonPodsAction.ACTION_RFCOMM_LOG).apply {
             setPackage(BuildConfig.APPLICATION_ID)
             putExtra("level", entry.level)
             putExtra("tag", entry.tag)

@@ -15,7 +15,7 @@ import moe.huime.moonpods.pods.PodBrand
 import moe.huime.moonpods.pods.PodCatalog
 import moe.huime.moonpods.pods.moondrop.MoondropController
 import moe.huime.moonpods.utils.SystemApisUtils.setIconVisibility
-import moe.huime.moonpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 
 object HeadsetStateDispatcher : HookContext() {
 
@@ -30,20 +30,20 @@ object HeadsetStateDispatcher : HookContext() {
      * 命令必须回到协议栈所在进程执行，跨进程只有广播这一条路。
      */
     private val MOONDROP_CONTROL_ACTIONS = arrayOf(
-        HyperPodsAction.UI_INIT,
-        HyperPodsAction.REQUEST_BATTERY,
-        HyperPodsAction.REQUEST_CAPABILITIES,
-        HyperPodsAction.ANC_SELECT,
-        HyperPodsAction.GAIN_SELECT,
-        HyperPodsAction.LED_SELECT,
-        HyperPodsAction.PROMPT_TONE_SELECT,
-        HyperPodsAction.PROMPT_VOLUME_SELECT,
-        HyperPodsAction.LHDC_SELECT,
-        HyperPodsAction.DUAL_CONNECTION_SELECT,
-        HyperPodsAction.SPATIAL_AUDIO_SELECT,
-        HyperPodsAction.HEAD_TRACKING_SELECT,
-        HyperPodsAction.GESTURE_SELECT,
-        HyperPodsAction.CODEC_CHANGED
+        MoonPodsAction.UI_INIT,
+        MoonPodsAction.REQUEST_BATTERY,
+        MoonPodsAction.REQUEST_CAPABILITIES,
+        MoonPodsAction.ANC_SELECT,
+        MoonPodsAction.GAIN_SELECT,
+        MoonPodsAction.LED_SELECT,
+        MoonPodsAction.PROMPT_TONE_SELECT,
+        MoonPodsAction.PROMPT_VOLUME_SELECT,
+        MoonPodsAction.LHDC_SELECT,
+        MoonPodsAction.DUAL_CONNECTION_SELECT,
+        MoonPodsAction.SPATIAL_AUDIO_SELECT,
+        MoonPodsAction.HEAD_TRACKING_SELECT,
+        MoonPodsAction.GESTURE_SELECT,
+        MoonPodsAction.CODEC_CHANGED
     )
 
     override fun onHook() {
@@ -92,21 +92,21 @@ object HeadsetStateDispatcher : HookContext() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (context == null) return
                 when (intent?.action) {
-                    HyperPodsAction.ACTION_PODS_UI_INIT,
-                    HyperPodsAction.ACTION_REFRESH_STATUS -> {
-                        context.sendBroadcast(Intent(HyperPodsAction.ACTION_MODULE_BLUETOOTH_SERVICE_ALIVE).apply {
+                    MoonPodsAction.ACTION_PODS_UI_INIT,
+                    MoonPodsAction.ACTION_REFRESH_STATUS -> {
+                        context.sendBroadcast(Intent(MoonPodsAction.ACTION_MODULE_BLUETOOTH_SERVICE_ALIVE).apply {
                             setPackage(BuildConfig.APPLICATION_ID)
                             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
                         })
                     }
-                    HyperPodsAction.ACTION_CONNECT_POD_REQUEST -> {
+                    MoonPodsAction.ACTION_CONNECT_POD_REQUEST -> {
                         val device = intent.getParcelableExtra("device", BluetoothDevice::class.java) ?: return
                         if (resolveBrand(device) == null) return
                         Log.d(TAG, "connect request from app device=${device.address}")
                         MoondropController.init(context)
                         MoondropController.connect(device)
                     }
-                    HyperPodsAction.ACTION_DISCONNECT_POD_REQUEST -> {
+                    MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST -> {
                         val device = intent.getParcelableExtra("device", BluetoothDevice::class.java) ?: return
                         if (resolveBrand(device) == null) return
                         Log.d(TAG, "disconnect request from app device=${device.address}")
@@ -124,10 +124,10 @@ object HeadsetStateDispatcher : HookContext() {
                 }
             }
         }, IntentFilter().apply {
-            addAction(HyperPodsAction.ACTION_PODS_UI_INIT)
-            addAction(HyperPodsAction.ACTION_REFRESH_STATUS)
-            addAction(HyperPodsAction.ACTION_CONNECT_POD_REQUEST)
-            addAction(HyperPodsAction.ACTION_DISCONNECT_POD_REQUEST)
+            addAction(MoonPodsAction.ACTION_PODS_UI_INIT)
+            addAction(MoonPodsAction.ACTION_REFRESH_STATUS)
+            addAction(MoonPodsAction.ACTION_CONNECT_POD_REQUEST)
+            addAction(MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST)
             MOONDROP_CONTROL_ACTIONS.forEach { addAction(it) }
         }, Context.RECEIVER_EXPORTED)
         appRequestReceiverRegistered = true

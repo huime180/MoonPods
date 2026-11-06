@@ -1,6 +1,6 @@
 package moe.huime.moonpods.utils.miuiStrongToast.data
 
-object HyperPodsAction {
+object MoonPodsAction {
     const val ACTION_PODS_UI_INIT = "chen.action.hyperpods.ui_init"
     const val ACTION_PODS_UI_CLOSED = "chen.action.hyperpods.ui_closed"
     const val ACTION_MODULE_BLUETOOTH_SERVICE_ALIVE = "chen.action.hyperpods.module_bluetooth_service_alive"

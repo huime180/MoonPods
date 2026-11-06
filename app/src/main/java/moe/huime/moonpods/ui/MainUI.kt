@@ -50,7 +50,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.ui.NavDisplay
-import moe.huime.moonpods.HyperPodsApp
+import moe.huime.moonpods.MoonPodsApp
 import moe.huime.moonpods.R
 import moe.huime.moonpods.config.ConfigManager
 import moe.huime.moonpods.config.PodImagePrefs
@@ -68,7 +68,7 @@ import moe.huime.moonpods.utils.MoondropImageAutoImport
 import moe.huime.moonpods.utils.RootManager
 import moe.huime.moonpods.utils.miuiStrongToast.data.BatteryParams
 import moe.huime.moonpods.utils.miuiStrongToast.data.batteryStatusCompat
-import moe.huime.moonpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -159,7 +159,7 @@ fun MainUI(
     var hasAppliedDefaultTab by remember { mutableStateOf(false) }
     var hasAutoOpenedConnectedDevice by remember { mutableStateOf(false) }
     var bluetoothState by remember { mutableStateOf(readBluetoothState(context)) }
-    var xposedService by remember { mutableStateOf(HyperPodsApp.xposedService) }
+    var xposedService by remember { mutableStateOf(MoonPodsApp.xposedService) }
     var showDevicePicker by remember { mutableStateOf(false) }
     var showRestartScopeDialog by remember { mutableStateOf(false) }
     var restartingScopes by remember { mutableStateOf(false) }
@@ -228,56 +228,56 @@ fun MainUI(
         ancIndex = moondropAncIndex.value,
         onAncChange = { index ->
             // 线上传的是档位下标（不是 OPPO 的 1/2/3/4 语义），直接回传下标
-            moondropSend(HyperPodsAction.ANC_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_STATUS, index)
+            moondropSend(MoonPodsAction.ANC_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_STATUS, index)
             }
             moondropAncIndex.value = index
         },
         gainLabels = moondropGainLabels.value,
         gainIndex = moondropGainIndex.value,
         onGainChange = { index ->
-            moondropSend(HyperPodsAction.GAIN_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_STATUS, index)
+            moondropSend(MoonPodsAction.GAIN_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_STATUS, index)
             }
         },
         ledOn = moondropLedOn.value,
         onLedChange = { on ->
-            moondropSend(HyperPodsAction.LED_SELECT) { it.putExtra(HyperPodsAction.EXTRA_ENABLED, on) }
+            moondropSend(MoonPodsAction.LED_SELECT) { it.putExtra(MoonPodsAction.EXTRA_ENABLED, on) }
         },
         promptToneOn = moondropPromptToneOn.value,
         onPromptToneChange = { on ->
-            moondropSend(HyperPodsAction.PROMPT_TONE_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+            moondropSend(MoonPodsAction.PROMPT_TONE_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         },
         promptVolumePercent = moondropPromptVolumeRaw.value.coerceIn(0, 100),
         onPromptVolumeChange = { percent ->
             // 设备侧直接收 0..100 的原始百分比，界面不再折算成「档」
-            moondropSend(HyperPodsAction.PROMPT_VOLUME_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_PROMPT_VOLUME_RAW, percent.coerceIn(0, 100))
+            moondropSend(MoonPodsAction.PROMPT_VOLUME_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_PROMPT_VOLUME_RAW, percent.coerceIn(0, 100))
             }
         },
         lhdcOn = moondropLhdcOn.value,
         onLhdcChange = { on ->
-            moondropSend(HyperPodsAction.LHDC_SELECT) { it.putExtra(HyperPodsAction.EXTRA_ENABLED, on) }
+            moondropSend(MoonPodsAction.LHDC_SELECT) { it.putExtra(MoonPodsAction.EXTRA_ENABLED, on) }
         },
         dualConnectionOn = moondropDualConnectionOn.value,
         onDualConnectionChange = { on ->
-            moondropSend(HyperPodsAction.DUAL_CONNECTION_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+            moondropSend(MoonPodsAction.DUAL_CONNECTION_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         },
         // 空间音频与头部追踪都**不乐观更新**：只把选择发给蓝牙进程，等它回读后广播 CHANGED 回灌
         spatialOn = moondropSpatialOn.value,
         onSpatialChange = { on ->
-            moondropSend(HyperPodsAction.SPATIAL_AUDIO_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+            moondropSend(MoonPodsAction.SPATIAL_AUDIO_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         },
         headTrackingOn = moondropHeadTrackingOn.value,
         onHeadTrackingChange = { on ->
-            moondropSend(HyperPodsAction.HEAD_TRACKING_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+            moondropSend(MoonPodsAction.HEAD_TRACKING_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         },
         onOpenGesture = { backStack.add(Screen.Gesture) }
@@ -354,17 +354,17 @@ fun MainUI(
                 when (p1?.action) {
                     // ---- 水月雨线（协议栈在被 hook 的蓝牙进程里，应用侧只做镜像）----
 
-                    HyperPodsAction.PODS_CONNECTED -> {
+                    MoonPodsAction.PODS_CONNECTED -> {
                         moondropConnected.value = true
-                        val name = p1.getStringExtra(HyperPodsAction.EXTRA_DEVICE_NAME)
+                        val name = p1.getStringExtra(MoonPodsAction.EXTRA_DEVICE_NAME)
                         moondropModelName.value = name.orEmpty()
                         mainTitle.value = name ?: ""
-                        connectedDeviceAddress = p1.getStringExtra(HyperPodsAction.EXTRA_MAC)
+                        connectedDeviceAddress = p1.getStringExtra(MoonPodsAction.EXTRA_MAC)
                             ?: connectedDeviceAddress
                         Log.i("HyperPods", "moondrop pod connected: $name")
                     }
 
-                    HyperPodsAction.PODS_DISCONNECTED -> {
+                    MoonPodsAction.PODS_DISCONNECTED -> {
                         moondropConnected.value = false
                         moondropBattery.value = BatteryParams()
                         moondropAncIndex.value = -1
@@ -374,69 +374,69 @@ fun MainUI(
                         mainTitle.value = ""
                     }
 
-                    HyperPodsAction.BATTERY_CHANGED -> {
+                    MoonPodsAction.BATTERY_CHANGED -> {
                         p1.batteryStatusCompat()?.let { moondropBattery.value = it }
                     }
 
-                    HyperPodsAction.ANC_CHANGED -> {
-                        moondropAncIndex.value = p1.getIntExtra(HyperPodsAction.EXTRA_STATUS, -1)
-                        p1.getStringArrayListExtra(HyperPodsAction.EXTRA_ANC_IDS)?.let {
+                    MoonPodsAction.ANC_CHANGED -> {
+                        moondropAncIndex.value = p1.getIntExtra(MoonPodsAction.EXTRA_STATUS, -1)
+                        p1.getStringArrayListExtra(MoonPodsAction.EXTRA_ANC_IDS)?.let {
                             moondropAncIds.value = it
                         }
                     }
 
-                    HyperPodsAction.GAIN_CHANGED ->
+                    MoonPodsAction.GAIN_CHANGED ->
                         moondropGainIndex.value =
-                            p1.getIntExtra(HyperPodsAction.EXTRA_STATUS, 0).coerceAtLeast(0)
+                            p1.getIntExtra(MoonPodsAction.EXTRA_STATUS, 0).coerceAtLeast(0)
 
-                    HyperPodsAction.LED_CHANGED ->
-                        moondropLedOn.value = p1.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false)
+                    MoonPodsAction.LED_CHANGED ->
+                        moondropLedOn.value = p1.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false)
 
-                    HyperPodsAction.PROMPT_TONE_CHANGED ->
+                    MoonPodsAction.PROMPT_TONE_CHANGED ->
                         moondropPromptToneOn.value =
-                            p1.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false)
+                            p1.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false)
 
-                    HyperPodsAction.PROMPT_VOLUME_CHANGED ->
+                    MoonPodsAction.PROMPT_VOLUME_CHANGED ->
                         moondropPromptVolumeRaw.value =
-                            p1.getIntExtra(HyperPodsAction.EXTRA_PROMPT_VOLUME_RAW, 0).coerceAtLeast(0)
+                            p1.getIntExtra(MoonPodsAction.EXTRA_PROMPT_VOLUME_RAW, 0).coerceAtLeast(0)
 
-                    HyperPodsAction.LHDC_CHANGED ->
-                        moondropLhdcOn.value = p1.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false)
+                    MoonPodsAction.LHDC_CHANGED ->
+                        moondropLhdcOn.value = p1.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false)
 
-                    HyperPodsAction.DUAL_CONNECTION_CHANGED ->
+                    MoonPodsAction.DUAL_CONNECTION_CHANGED ->
                         moondropDualConnectionOn.value =
-                            p1.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false)
+                            p1.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false)
 
-                    HyperPodsAction.SPATIAL_AUDIO_CHANGED ->
+                    MoonPodsAction.SPATIAL_AUDIO_CHANGED ->
                         moondropSpatialOn.value =
-                            p1.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false)
+                            p1.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false)
 
-                    HyperPodsAction.HEAD_TRACKING_CHANGED ->
+                    MoonPodsAction.HEAD_TRACKING_CHANGED ->
                         moondropHeadTrackingOn.value =
-                            p1.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false)
+                            p1.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false)
 
-                    HyperPodsAction.GESTURE_CHANGED -> {
+                    MoonPodsAction.GESTURE_CHANGED -> {
                         // 内部按字节保存；界面按半字节取某一耳
-                        p1.getByteArrayExtra(HyperPodsAction.EXTRA_GESTURE_PAYLOAD)?.let { bytes ->
+                        p1.getByteArrayExtra(MoonPodsAction.EXTRA_GESTURE_PAYLOAD)?.let { bytes ->
                             moondropGestureConf.value = IntArray(bytes.size) { i ->
                                 bytes[i].toInt() and 0xFF
                             }
                         }
                     }
 
-                    HyperPodsAction.CODEC_CHANGED ->
+                    MoonPodsAction.CODEC_CHANGED ->
                         moondropActiveCodec.value =
-                            p1.getStringExtra(HyperPodsAction.EXTRA_CODEC).orEmpty()
+                            p1.getStringExtra(MoonPodsAction.EXTRA_CODEC).orEmpty()
 
-                    HyperPodsAction.CAPABILITIES_CHANGED -> {
+                    MoonPodsAction.CAPABILITIES_CHANGED -> {
                         moondropModelName.value =
-                            p1.getStringExtra(HyperPodsAction.EXTRA_MODEL_NAME).orEmpty()
-                        val caps = p1.getBundleExtra(HyperPodsAction.EXTRA_CAPS_BUNDLE)
+                            p1.getStringExtra(MoonPodsAction.EXTRA_MODEL_NAME).orEmpty()
+                        val caps = p1.getBundleExtra(MoonPodsAction.EXTRA_CAPS_BUNDLE)
                         moondropCaps.value = caps
                         moondropGainLabels.value = caps?.getStringArrayList("gainLabels") ?: emptyList()
                     }
 
-                    HyperPodsAction.ACTION_PODS_ANC_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_ANC_CHANGED -> {
                         connectedDeviceAddress = p1.getStringExtra("address") ?: connectedDeviceAddress
                         val status = p1.getIntExtra("status", 1)
                         ancMode.value = when (status) {
@@ -452,18 +452,18 @@ fun MainUI(
                         }
                     }
 
-                    HyperPodsAction.ACTION_PODS_SMART_ANC_LEVEL_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_SMART_ANC_LEVEL_CHANGED -> {
                         val ord = p1.getIntExtra("ordinal", -1)
                         smartAncLevel.value = NoiseControlMode.entries.getOrNull(ord)
                     }
 
-                    HyperPodsAction.ACTION_PODS_BATTERY_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_BATTERY_CHANGED -> {
                         connectedDeviceAddress = p1.getStringExtra("address") ?: connectedDeviceAddress
                         batteryParams.value =
                             p1.getParcelableExtra("status", BatteryParams::class.java)!!
                     }
 
-                    HyperPodsAction.ACTION_PODS_WEAR_STATUS_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_WEAR_STATUS_CHANGED -> {
                         connectedDeviceAddress = p1.getStringExtra("address") ?: connectedDeviceAddress
                         wearStatus.value = WearStatus(
                             left = wearStateFromExtra(p1.getIntExtra("left_wear_status", -1)),
@@ -472,33 +472,33 @@ fun MainUI(
                         )
                     }
 
-                    HyperPodsAction.ACTION_PODS_GAME_MODE_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_GAME_MODE_CHANGED -> {
                         gameMode.value = p1.getBooleanExtra("enabled", false)
                     }
 
-                    HyperPodsAction.ACTION_PODS_TRANSPARENCY_VOCAL_ENHANCEMENT_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_TRANSPARENCY_VOCAL_ENHANCEMENT_CHANGED -> {
                         transparencyVocalEnhancement.value = p1.getBooleanExtra("enabled", false)
                     }
 
-                    HyperPodsAction.ACTION_PODS_SPATIAL_AUDIO_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_SPATIAL_AUDIO_CHANGED -> {
                         spatialAudioMode.value = p1.getIntExtra("mode", ConfigManager.SPATIAL_AUDIO_OFF)
                     }
 
-                    HyperPodsAction.ACTION_PODS_EQ_PRESET_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_EQ_PRESET_CHANGED -> {
                         eqPreset.value = p1.getIntExtra("preset", -1)
                         eqDevicePresets.value = runCatching {
                             Json.decodeFromString(
                                 ListSerializer(EqDevicePreset.serializer()),
-                                p1.getStringExtra(HyperPodsAction.EXTRA_EQ_ENTRIES_JSON).orEmpty(),
+                                p1.getStringExtra(MoonPodsAction.EXTRA_EQ_ENTRIES_JSON).orEmpty(),
                             )
                         }.getOrDefault(emptyList())
                     }
 
-                    HyperPodsAction.ACTION_PODS_DUAL_DEVICE_CONNECTION_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_DUAL_DEVICE_CONNECTION_CHANGED -> {
                         dualDeviceConnection.value = p1.getBooleanExtra("enabled", false)
                     }
 
-                    HyperPodsAction.ACTION_PODS_CONNECTED -> {
+                    MoonPodsAction.ACTION_PODS_CONNECTED -> {
                         val deviceName = p1.getStringExtra("device_name")
                         val shouldOpenEarphones = connectingDeviceAddress != null || !hasAutoOpenedConnectedDevice
                         connectedDeviceAddress = p1.getStringExtra("address") ?: connectedDeviceAddress
@@ -523,7 +523,7 @@ fun MainUI(
                         Log.i("HyperPods", "pod connected via hook: $deviceName")
                     }
 
-                    HyperPodsAction.ACTION_PODS_CONNECTION_STATE_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_CONNECTION_STATE_CHANGED -> {
                         hookConnectionState = p1.getStringExtra("state") ?: hookConnectionState
                         if (hookConnectionState == "disconnected") {
                             connectedDeviceAddress = ""
@@ -540,7 +540,7 @@ fun MainUI(
                         }
                     }
 
-                    HyperPodsAction.ACTION_PODS_DISCONNECTED -> {
+                    MoonPodsAction.ACTION_PODS_DISCONNECTED -> {
                         mainTitle.value = ""
                         connectedDeviceAddress = ""
                         productId.value = null
@@ -549,7 +549,7 @@ fun MainUI(
                         hasAutoOpenedConnectedDevice = false
                     }
 
-                    HyperPodsAction.ACTION_MODULE_BLUETOOTH_SERVICE_ALIVE -> {
+                    MoonPodsAction.ACTION_MODULE_BLUETOOTH_SERVICE_ALIVE -> {
                         lastBluetoothServiceAliveMs = SystemClock.elapsedRealtime()
                         bluetoothServiceResponsive = true
                     }
@@ -567,76 +567,76 @@ fun MainUI(
         val serviceListener: (io.github.libxposed.service.XposedService?) -> Unit = { service ->
             xposedService = service
         }
-        HyperPodsApp.addServiceListener(serviceListener)
+        MoonPodsApp.addServiceListener(serviceListener)
 
         context.registerReceiver(broadcastReceiver, IntentFilter().apply {
-            addAction(HyperPodsAction.ACTION_PODS_ANC_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_SMART_ANC_LEVEL_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_BATTERY_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_WEAR_STATUS_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_GAME_MODE_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_TRANSPARENCY_VOCAL_ENHANCEMENT_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_SPATIAL_AUDIO_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_EQ_PRESET_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_DUAL_DEVICE_CONNECTION_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_CONNECTED)
-            addAction(HyperPodsAction.ACTION_PODS_CONNECTION_STATE_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_DISCONNECTED)
-            addAction(HyperPodsAction.ACTION_MODULE_BLUETOOTH_SERVICE_ALIVE)
+            addAction(MoonPodsAction.ACTION_PODS_ANC_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_SMART_ANC_LEVEL_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_BATTERY_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_WEAR_STATUS_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_GAME_MODE_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_TRANSPARENCY_VOCAL_ENHANCEMENT_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_SPATIAL_AUDIO_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_EQ_PRESET_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_DUAL_DEVICE_CONNECTION_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_CONNECTED)
+            addAction(MoonPodsAction.ACTION_PODS_CONNECTION_STATE_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_DISCONNECTED)
+            addAction(MoonPodsAction.ACTION_MODULE_BLUETOOTH_SERVICE_ALIVE)
             addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
             addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         
-            addAction(HyperPodsAction.PODS_CONNECTED)
-            addAction(HyperPodsAction.PODS_DISCONNECTED)
-            addAction(HyperPodsAction.BATTERY_CHANGED)
-            addAction(HyperPodsAction.ANC_CHANGED)
-            addAction(HyperPodsAction.GAIN_CHANGED)
-            addAction(HyperPodsAction.LED_CHANGED)
-            addAction(HyperPodsAction.PROMPT_TONE_CHANGED)
-            addAction(HyperPodsAction.PROMPT_VOLUME_CHANGED)
-            addAction(HyperPodsAction.LHDC_CHANGED)
-            addAction(HyperPodsAction.DUAL_CONNECTION_CHANGED)
-            addAction(HyperPodsAction.SPATIAL_AUDIO_CHANGED)
-            addAction(HyperPodsAction.HEAD_TRACKING_CHANGED)
-            addAction(HyperPodsAction.GESTURE_CHANGED)
-            addAction(HyperPodsAction.CODEC_CHANGED)
-            addAction(HyperPodsAction.CAPABILITIES_CHANGED)
+            addAction(MoonPodsAction.PODS_CONNECTED)
+            addAction(MoonPodsAction.PODS_DISCONNECTED)
+            addAction(MoonPodsAction.BATTERY_CHANGED)
+            addAction(MoonPodsAction.ANC_CHANGED)
+            addAction(MoonPodsAction.GAIN_CHANGED)
+            addAction(MoonPodsAction.LED_CHANGED)
+            addAction(MoonPodsAction.PROMPT_TONE_CHANGED)
+            addAction(MoonPodsAction.PROMPT_VOLUME_CHANGED)
+            addAction(MoonPodsAction.LHDC_CHANGED)
+            addAction(MoonPodsAction.DUAL_CONNECTION_CHANGED)
+            addAction(MoonPodsAction.SPATIAL_AUDIO_CHANGED)
+            addAction(MoonPodsAction.HEAD_TRACKING_CHANGED)
+            addAction(MoonPodsAction.GESTURE_CHANGED)
+            addAction(MoonPodsAction.CODEC_CHANGED)
+            addAction(MoonPodsAction.CAPABILITIES_CHANGED)
         }, Context.RECEIVER_EXPORTED)
 
-        sendBluetoothModuleBroadcast(context, HyperPodsAction.ACTION_PODS_UI_INIT)
+        sendBluetoothModuleBroadcast(context, MoonPodsAction.ACTION_PODS_UI_INIT)
 
         // 水月雨线也要问一次（见 MoondropController.handleUIEvent 的 UI_INIT 分支）：
         // 只发 OPPO 那条 ACTION_PODS_UI_INIT 时，水月雨这边的 refreshAll() 从来没被触发过。
-        sendBluetoothModuleBroadcast(context, HyperPodsAction.UI_INIT)
+        sendBluetoothModuleBroadcast(context, MoonPodsAction.UI_INIT)
 
         onDispose {
-            sendBluetoothModuleBroadcast(context, HyperPodsAction.ACTION_PODS_UI_CLOSED)
+            sendBluetoothModuleBroadcast(context, MoonPodsAction.ACTION_PODS_UI_CLOSED)
             try {
                 context.unregisterReceiver(broadcastReceiver)
             } catch (_: Exception) {}
-            HyperPodsApp.removeServiceListener(serviceListener)
+            MoonPodsApp.removeServiceListener(serviceListener)
         }
     }
 
     LaunchedEffect(Unit) {
         while (true) {
-            sendBluetoothModuleBroadcast(context, HyperPodsAction.ACTION_PODS_UI_INIT)
+            sendBluetoothModuleBroadcast(context, MoonPodsAction.ACTION_PODS_UI_INIT)
 
             // 水月雨线也要问一次（同上）。
-            sendBluetoothModuleBroadcast(context, HyperPodsAction.UI_INIT)
-            sendBluetoothModuleBroadcast(context, HyperPodsAction.ACTION_REFRESH_STATUS)
+            sendBluetoothModuleBroadcast(context, MoonPodsAction.UI_INIT)
+            sendBluetoothModuleBroadcast(context, MoonPodsAction.ACTION_REFRESH_STATUS)
             delay(30_000L)
         }
     }
 
     LaunchedEffect(selectedTab, hookConnected.value) {
-        sendBluetoothModuleBroadcast(context, HyperPodsAction.ACTION_PODS_UI_INIT)
+        sendBluetoothModuleBroadcast(context, MoonPodsAction.ACTION_PODS_UI_INIT)
 
         // 水月雨线也要问一次（见 MoondropController.handleUIEvent 的 UI_INIT 分支）：
         // 只发 OPPO 那条 ACTION_PODS_UI_INIT 时，水月雨这边的 refreshAll() 从来没被触发过。
-        sendBluetoothModuleBroadcast(context, HyperPodsAction.UI_INIT)
+        sendBluetoothModuleBroadcast(context, MoonPodsAction.UI_INIT)
         if (selectedTab == MainTab.Module || hookConnected.value) {
-            sendBluetoothModuleBroadcast(context, HyperPodsAction.ACTION_REFRESH_STATUS)
+            sendBluetoothModuleBroadcast(context, MoonPodsAction.ACTION_REFRESH_STATUS)
         }
     }
 
@@ -660,7 +660,7 @@ fun MainUI(
             NoiseControlMode.NOISE_CANCELLATION_MEDIUM -> 7
             NoiseControlMode.NOISE_CANCELLATION_DEEP -> 8
         }
-        Intent(HyperPodsAction.ACTION_ANC_SELECT).apply {
+        Intent(MoonPodsAction.ACTION_ANC_SELECT).apply {
             this.putExtra("status", status)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -670,7 +670,7 @@ fun MainUI(
 
     fun setGameMode(enabled: Boolean) {
         gameMode.value = enabled
-        Intent(HyperPodsAction.ACTION_GAME_MODE_SET).apply {
+        Intent(MoonPodsAction.ACTION_GAME_MODE_SET).apply {
             this.putExtra("enabled", enabled)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -680,7 +680,7 @@ fun MainUI(
 
     fun setTransparencyVocalEnhancement(enabled: Boolean) {
         transparencyVocalEnhancement.value = enabled
-        Intent(HyperPodsAction.ACTION_TRANSPARENCY_VOCAL_ENHANCEMENT_SET).apply {
+        Intent(MoonPodsAction.ACTION_TRANSPARENCY_VOCAL_ENHANCEMENT_SET).apply {
             this.putExtra("enabled", enabled)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -710,7 +710,7 @@ fun MainUI(
         showDevicePicker = true
         selectedTab = MainTab.Earphones
         hookConnectionState = "connecting"
-        Intent(HyperPodsAction.ACTION_CONNECT_POD_REQUEST).apply {
+        Intent(MoonPodsAction.ACTION_CONNECT_POD_REQUEST).apply {
             putExtra("device", device)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -722,7 +722,7 @@ fun MainUI(
         val normalizedMode = mode.coerceIn(ConfigManager.SPATIAL_AUDIO_OFF, ConfigManager.SPATIAL_AUDIO_HEAD_TRACKING)
         spatialAudioMode.value = normalizedMode
         prefs.edit().putInt("spatial_audio_mode", normalizedMode).apply()
-        Intent(HyperPodsAction.ACTION_SPATIAL_AUDIO_SET).apply {
+        Intent(MoonPodsAction.ACTION_SPATIAL_AUDIO_SET).apply {
             this.putExtra("mode", normalizedMode)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -732,7 +732,7 @@ fun MainUI(
 
     fun setEqPreset(preset: Int) {
         eqPreset.value = preset
-        Intent(HyperPodsAction.ACTION_EQ_PRESET_SET).apply {
+        Intent(MoonPodsAction.ACTION_EQ_PRESET_SET).apply {
             this.putExtra("preset", preset)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -748,7 +748,7 @@ fun MainUI(
         minValue: Int,
         maxValue: Int,
     ) {
-        Intent(HyperPodsAction.ACTION_EQ_PRESET_SAVE).apply {
+        Intent(MoonPodsAction.ACTION_EQ_PRESET_SAVE).apply {
             putExtra("id", id)
             putExtra("name", name)
             putIntegerArrayListExtra("frequencies", ArrayList(frequencies))
@@ -762,9 +762,9 @@ fun MainUI(
     }
 
     fun deleteEqPreset(entry: EqDevicePreset) {
-        Intent(HyperPodsAction.ACTION_EQ_PRESET_DELETE).apply {
+        Intent(MoonPodsAction.ACTION_EQ_PRESET_DELETE).apply {
             putExtra(
-                HyperPodsAction.EXTRA_EQ_ENTRIES_JSON,
+                MoonPodsAction.EXTRA_EQ_ENTRIES_JSON,
                 Json.encodeToString(ListSerializer(EqDevicePreset.serializer()), listOf(entry)),
             )
             setPackage("com.android.bluetooth")
@@ -775,7 +775,7 @@ fun MainUI(
 
     fun setDualDeviceConnection(enabled: Boolean) {
         dualDeviceConnection.value = enabled
-        Intent(HyperPodsAction.ACTION_DUAL_DEVICE_CONNECTION_SET).apply {
+        Intent(MoonPodsAction.ACTION_DUAL_DEVICE_CONNECTION_SET).apply {
             this.putExtra("enabled", enabled)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -792,7 +792,7 @@ fun MainUI(
             connectedDeviceAddress = ""
             mainTitle.value = ""
         }
-        Intent(HyperPodsAction.ACTION_DISCONNECT_POD_REQUEST).apply {
+        Intent(MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST).apply {
             putExtra("device", device)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -865,7 +865,7 @@ fun MainUI(
 
     fun refreshStatus() {
         if (hookConnected.value) {
-            context.sendBroadcast(Intent(HyperPodsAction.ACTION_REFRESH_STATUS).apply {
+            context.sendBroadcast(Intent(MoonPodsAction.ACTION_REFRESH_STATUS).apply {
                 setPackage("com.android.bluetooth")
                 addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             })
@@ -1068,10 +1068,10 @@ fun MainUI(
                     contentPadding = padding,
                     conf = moondropGestureConf.value,
                     onSelect = { slot, ear, actionId ->
-                        moondropSend(HyperPodsAction.GESTURE_SELECT) {
-                            it.putExtra(HyperPodsAction.EXTRA_GESTURE_SLOT, slot)
-                            it.putExtra(HyperPodsAction.EXTRA_GESTURE_EAR, ear)
-                            it.putExtra(HyperPodsAction.EXTRA_STATUS, actionId)
+                        moondropSend(MoonPodsAction.GESTURE_SELECT) {
+                            it.putExtra(MoonPodsAction.EXTRA_GESTURE_SLOT, slot)
+                            it.putExtra(MoonPodsAction.EXTRA_GESTURE_EAR, ear)
+                            it.putExtra(MoonPodsAction.EXTRA_STATUS, actionId)
                         }
                     }
                 )
@@ -1293,7 +1293,7 @@ private fun setLauncherIconHidden(context: Context, hidden: Boolean) {
 }
 
 private fun broadcastConfigChanged(context: Context, packageName: String) {
-    Intent(HyperPodsAction.ACTION_CONFIG_CHANGED).apply {
+    Intent(MoonPodsAction.ACTION_CONFIG_CHANGED).apply {
         setPackage(packageName)
         addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         context.sendBroadcast(this)

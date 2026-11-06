@@ -60,7 +60,7 @@ import moe.huime.moonpods.ui.components.PromptVolumeSlider
 import moe.huime.moonpods.ui.components.QuickControlsHeader
 import moe.huime.moonpods.ui.components.PodStatus
 import moe.huime.moonpods.utils.miuiStrongToast.data.BatteryParams
-import moe.huime.moonpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -277,7 +277,7 @@ private fun PopupContent(
         object : BroadcastReceiver() {
             override fun onReceive(p0: Context?, p1: Intent?) {
                 when (p1?.action) {
-                    HyperPodsAction.ACTION_PODS_ANC_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_ANC_CHANGED -> {
                         val status = p1.getIntExtra("status", 1)
                         ancMode.value = when (status) {
                             1 -> NoiseControlMode.OFF
@@ -291,60 +291,60 @@ private fun PopupContent(
                             else -> NoiseControlMode.OFF
                         }
                     }
-                    HyperPodsAction.ANC_CHANGED -> {
+                    MoonPodsAction.ANC_CHANGED -> {
                         mdAncIds.value =
-                            p1.getStringArrayListExtra(HyperPodsAction.EXTRA_ANC_IDS).orEmpty()
-                        mdAncIndex.value = p1.getIntExtra(HyperPodsAction.EXTRA_STATUS, 0)
+                            p1.getStringArrayListExtra(MoonPodsAction.EXTRA_ANC_IDS).orEmpty()
+                        mdAncIndex.value = p1.getIntExtra(MoonPodsAction.EXTRA_STATUS, 0)
                         if (!showDialog.value) showDialog.value = true
                     }
-                    HyperPodsAction.BATTERY_CHANGED -> {
+                    MoonPodsAction.BATTERY_CHANGED -> {
                         p1.batteryStatusCompat()?.let { batteryParams.value = it }
                     }
-                    HyperPodsAction.PODS_CONNECTED -> {
+                    MoonPodsAction.PODS_CONNECTED -> {
                         p1.getStringExtra("device_name")?.takeIf { it.isNotEmpty() }
                             ?.let { deviceName.value = it }
                         if (!showDialog.value) showDialog.value = true
                     }
-                    HyperPodsAction.PODS_DISCONNECTED -> {
+                    MoonPodsAction.PODS_DISCONNECTED -> {
                         mdAncIds.value = emptyList()
                         mdAncIndex.value = 0
                         // 断开就清掉能力位：快捷控制那几行跟着消失（与 ui/MainUI.kt 同口径）
                         moondropCaps.value = null
                     }
-                    HyperPodsAction.CAPABILITIES_CHANGED -> {
-                        moondropCaps.value = p1.getBundleExtra(HyperPodsAction.EXTRA_CAPS_BUNDLE)
+                    MoonPodsAction.CAPABILITIES_CHANGED -> {
+                        moondropCaps.value = p1.getBundleExtra(MoonPodsAction.EXTRA_CAPS_BUNDLE)
                         // 型号名也在这条广播里；拿不到设备名时用它兜底当标题
-                        p1.getStringExtra(HyperPodsAction.EXTRA_MODEL_NAME)
+                        p1.getStringExtra(MoonPodsAction.EXTRA_MODEL_NAME)
                             ?.takeIf { it.isNotBlank() && deviceName.value.isBlank() }
                             ?.let { deviceName.value = it }
                     }
-                    HyperPodsAction.PROMPT_TONE_CHANGED ->
-                        promptToneOn.value = p1.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false)
-                    HyperPodsAction.PROMPT_VOLUME_CHANGED ->
+                    MoonPodsAction.PROMPT_TONE_CHANGED ->
+                        promptToneOn.value = p1.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false)
+                    MoonPodsAction.PROMPT_VOLUME_CHANGED ->
                         promptVolumeRaw.value =
-                            p1.getIntExtra(HyperPodsAction.EXTRA_PROMPT_VOLUME_RAW, 0).coerceIn(0, 100)
-                    HyperPodsAction.LHDC_CHANGED ->
-                        lhdcOn.value = p1.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false)
-                    HyperPodsAction.DUAL_CONNECTION_CHANGED ->
+                            p1.getIntExtra(MoonPodsAction.EXTRA_PROMPT_VOLUME_RAW, 0).coerceIn(0, 100)
+                    MoonPodsAction.LHDC_CHANGED ->
+                        lhdcOn.value = p1.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false)
+                    MoonPodsAction.DUAL_CONNECTION_CHANGED ->
                         dualConnectionOn.value =
-                            p1.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false)
-                    HyperPodsAction.ACTION_PODS_BATTERY_CHANGED -> {
+                            p1.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false)
+                    MoonPodsAction.ACTION_PODS_BATTERY_CHANGED -> {
                         batteryParams.value =
                             p1.getParcelableExtra("status", BatteryParams::class.java)!!
                     }
-                    HyperPodsAction.ACTION_PODS_CONNECTED -> {
+                    MoonPodsAction.ACTION_PODS_CONNECTED -> {
                         deviceName.value = p1.getStringExtra("device_name") ?: ""
                         productId.value = p1.getStringExtra("product_id") ?: productId.value
                         if (!showDialog.value) showDialog.value = true
                     }
-                    HyperPodsAction.ACTION_PODS_DISCONNECTED -> {
+                    MoonPodsAction.ACTION_PODS_DISCONNECTED -> {
                         productId.value = null
                         showDialog.value = false
                     }
-                    HyperPodsAction.ACTION_PODS_GAME_MODE_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_GAME_MODE_CHANGED -> {
                         gameMode.value = p1.getBooleanExtra("enabled", false)
                     }
-                    HyperPodsAction.ACTION_PODS_TRANSPARENCY_VOCAL_ENHANCEMENT_CHANGED -> {
+                    MoonPodsAction.ACTION_PODS_TRANSPARENCY_VOCAL_ENHANCEMENT_CHANGED -> {
                         transparencyVocalEnhancement.value = p1.getBooleanExtra("enabled", false)
                     }
                 }
@@ -354,36 +354,36 @@ private fun PopupContent(
 
     DisposableEffect(Unit) {
         context.registerReceiver(broadcastReceiver, IntentFilter().apply {
-            addAction(HyperPodsAction.ACTION_PODS_ANC_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_BATTERY_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_CONNECTED)
-            addAction(HyperPodsAction.ACTION_PODS_DISCONNECTED)
-            addAction(HyperPodsAction.ACTION_PODS_GAME_MODE_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_TRANSPARENCY_VOCAL_ENHANCEMENT_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_ANC_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_BATTERY_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_CONNECTED)
+            addAction(MoonPodsAction.ACTION_PODS_DISCONNECTED)
+            addAction(MoonPodsAction.ACTION_PODS_GAME_MODE_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_TRANSPARENCY_VOCAL_ENHANCEMENT_CHANGED)
             // 水月雨线（与上面那组 OPPO action 并存，两边互不影响）
-            addAction(HyperPodsAction.ANC_CHANGED)
-            addAction(HyperPodsAction.BATTERY_CHANGED)
-            addAction(HyperPodsAction.PODS_CONNECTED)
-            addAction(HyperPodsAction.PODS_DISCONNECTED)
+            addAction(MoonPodsAction.ANC_CHANGED)
+            addAction(MoonPodsAction.BATTERY_CHANGED)
+            addAction(MoonPodsAction.PODS_CONNECTED)
+            addAction(MoonPodsAction.PODS_DISCONNECTED)
             // 快捷控制（提示音含音量 / LHDC / 双设备连接）的能力位与当前值
-            addAction(HyperPodsAction.CAPABILITIES_CHANGED)
-            addAction(HyperPodsAction.PROMPT_TONE_CHANGED)
-            addAction(HyperPodsAction.PROMPT_VOLUME_CHANGED)
-            addAction(HyperPodsAction.LHDC_CHANGED)
-            addAction(HyperPodsAction.DUAL_CONNECTION_CHANGED)
+            addAction(MoonPodsAction.CAPABILITIES_CHANGED)
+            addAction(MoonPodsAction.PROMPT_TONE_CHANGED)
+            addAction(MoonPodsAction.PROMPT_VOLUME_CHANGED)
+            addAction(MoonPodsAction.LHDC_CHANGED)
+            addAction(MoonPodsAction.DUAL_CONNECTION_CHANGED)
         }, Context.RECEIVER_EXPORTED)
 
-        context.sendBroadcast(Intent(HyperPodsAction.ACTION_PODS_UI_INIT).apply {
+        context.sendBroadcast(Intent(MoonPodsAction.ACTION_PODS_UI_INIT).apply {
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         })
-        context.sendBroadcast(Intent(HyperPodsAction.ACTION_REFRESH_STATUS).apply {
+        context.sendBroadcast(Intent(MoonPodsAction.ACTION_REFRESH_STATUS).apply {
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         })
         // 水月雨同样是「先问一次」：控制器收到 UI_INIT 会 refreshAll()，然后把
         // ANC / 电量按 CONSUMERS 推回来 —— 应用进程就在 CONSUMERS 里。
-        context.sendBroadcast(Intent(HyperPodsAction.UI_INIT).apply {
+        context.sendBroadcast(Intent(MoonPodsAction.UI_INIT).apply {
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         })
@@ -401,7 +401,7 @@ private fun PopupContent(
 
         while (true) {
             delay(15_000)
-            context.sendBroadcast(Intent(HyperPodsAction.ACTION_REFRESH_STATUS).apply {
+            context.sendBroadcast(Intent(MoonPodsAction.ACTION_REFRESH_STATUS).apply {
                 setPackage("com.android.bluetooth")
                 addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             })
@@ -411,8 +411,8 @@ private fun PopupContent(
     /** 水月雨：把选中的**档位下标**发回蓝牙进程（控制器按型号档案换算成设备码）。 */
     fun setMoondropAnc(index: Int) {
         mdAncIndex.value = index
-        context.sendBroadcast(Intent(HyperPodsAction.ANC_SELECT).apply {
-            putExtra(HyperPodsAction.EXTRA_STATUS, index)
+        context.sendBroadcast(Intent(MoonPodsAction.ANC_SELECT).apply {
+            putExtra(MoonPodsAction.EXTRA_STATUS, index)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         })
@@ -430,7 +430,7 @@ private fun PopupContent(
             NoiseControlMode.NOISE_CANCELLATION_MEDIUM -> 7
             NoiseControlMode.NOISE_CANCELLATION_DEEP -> 8
         }
-        Intent(HyperPodsAction.ACTION_ANC_SELECT).apply {
+        Intent(MoonPodsAction.ACTION_ANC_SELECT).apply {
             putExtra("status", status)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -440,7 +440,7 @@ private fun PopupContent(
 
     fun setGameMode(enabled: Boolean) {
         gameMode.value = enabled
-        Intent(HyperPodsAction.ACTION_GAME_MODE_SET).apply {
+        Intent(MoonPodsAction.ACTION_GAME_MODE_SET).apply {
             putExtra("enabled", enabled)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -450,7 +450,7 @@ private fun PopupContent(
 
     fun setTransparencyVocalEnhancement(enabled: Boolean) {
         transparencyVocalEnhancement.value = enabled
-        Intent(HyperPodsAction.ACTION_TRANSPARENCY_VOCAL_ENHANCEMENT_SET).apply {
+        Intent(MoonPodsAction.ACTION_TRANSPARENCY_VOCAL_ENHANCEMENT_SET).apply {
             putExtra("enabled", enabled)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -481,24 +481,24 @@ private fun PopupContent(
         caps = moondropCaps.value,
         promptToneOn = promptToneOn.value,
         onPromptToneChange = { on ->
-            moondropSend(HyperPodsAction.PROMPT_TONE_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+            moondropSend(MoonPodsAction.PROMPT_TONE_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         },
         promptVolumePercent = promptVolumeRaw.value.coerceIn(0, 100),
         onPromptVolumeChange = { percent ->
-            moondropSend(HyperPodsAction.PROMPT_VOLUME_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_PROMPT_VOLUME_RAW, percent.coerceIn(0, 100))
+            moondropSend(MoonPodsAction.PROMPT_VOLUME_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_PROMPT_VOLUME_RAW, percent.coerceIn(0, 100))
             }
         },
         lhdcOn = lhdcOn.value,
         onLhdcChange = { on ->
-            moondropSend(HyperPodsAction.LHDC_SELECT) { it.putExtra(HyperPodsAction.EXTRA_ENABLED, on) }
+            moondropSend(MoonPodsAction.LHDC_SELECT) { it.putExtra(MoonPodsAction.EXTRA_ENABLED, on) }
         },
         dualConnectionOn = dualConnectionOn.value,
         onDualConnectionChange = { on ->
-            moondropSend(HyperPodsAction.DUAL_CONNECTION_SELECT) {
-                it.putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+            moondropSend(MoonPodsAction.DUAL_CONNECTION_SELECT) {
+                it.putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         },
     )

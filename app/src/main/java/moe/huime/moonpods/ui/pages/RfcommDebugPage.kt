@@ -40,7 +40,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import moe.huime.moonpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Text
@@ -70,7 +70,7 @@ fun RfcommDebugPage(
     DisposableEffect(context) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action != HyperPodsAction.ACTION_RFCOMM_LOG) return
+                if (intent?.action != MoonPodsAction.ACTION_RFCOMM_LOG) return
                 logs.add(
                     RfcommDebugLogEntry(
                         level = intent.getStringExtra("level").orEmpty().ifBlank { "D" },
@@ -82,10 +82,10 @@ fun RfcommDebugPage(
                 while (logs.size > MAX_LOGS) logs.removeAt(0)
             }
         }
-        context.registerReceiver(receiver, IntentFilter(HyperPodsAction.ACTION_RFCOMM_LOG), Context.RECEIVER_EXPORTED)
-        context.sendRfcommDebugBroadcast(HyperPodsAction.ACTION_RFCOMM_LOG_CONNECT)
+        context.registerReceiver(receiver, IntentFilter(MoonPodsAction.ACTION_RFCOMM_LOG), Context.RECEIVER_EXPORTED)
+        context.sendRfcommDebugBroadcast(MoonPodsAction.ACTION_RFCOMM_LOG_CONNECT)
         onDispose {
-            context.sendRfcommDebugBroadcast(HyperPodsAction.ACTION_RFCOMM_LOG_DISCONNECT)
+            context.sendRfcommDebugBroadcast(MoonPodsAction.ACTION_RFCOMM_LOG_DISCONNECT)
             context.unregisterReceiver(receiver)
         }
     }
@@ -93,7 +93,7 @@ fun RfcommDebugPage(
     LaunchedEffect(clearRequest) {
         if (clearRequest > 0) {
             logs.clear()
-            context.sendRfcommDebugBroadcast(HyperPodsAction.ACTION_RFCOMM_LOG_CLEAR)
+            context.sendRfcommDebugBroadcast(MoonPodsAction.ACTION_RFCOMM_LOG_CLEAR)
         }
     }
 
@@ -145,7 +145,7 @@ fun RfcommDebugPage(
             TextButton(
                 text = "发送",
                 onClick = {
-                    context.sendRfcommDebugBroadcast(HyperPodsAction.ACTION_RFCOMM_DEBUG_SEND) {
+                    context.sendRfcommDebugBroadcast(MoonPodsAction.ACTION_RFCOMM_DEBUG_SEND) {
                         putExtra("hex", hexInput)
                     }
                     hexInput = ""

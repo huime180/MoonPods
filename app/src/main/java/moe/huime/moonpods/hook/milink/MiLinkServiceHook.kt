@@ -24,7 +24,7 @@ import moe.huime.moonpods.pods.moondrop.AncMode
 import moe.huime.moonpods.utils.miuiStrongToast.data.batteryStatusCompat
 import moe.huime.moonpods.pods.detectDeviceCapabilities
 import moe.huime.moonpods.utils.miuiStrongToast.data.BatteryParams
-import moe.huime.moonpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 import moe.huime.moonpods.utils.miuiStrongToast.data.PodParams
 
 @SuppressLint("MissingPermission")
@@ -225,48 +225,48 @@ object MiLinkServiceHook : HookContext() {
         if (ctx == null || receiverRegistered) return
         context = ctx.applicationContext ?: ctx
         val filter = IntentFilter().apply {
-            addAction(HyperPodsAction.ACTION_PODS_CONNECTED)
-            addAction(HyperPodsAction.ACTION_PODS_DISCONNECTED)
-            addAction(HyperPodsAction.ACTION_PODS_BATTERY_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_ANC_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_GAME_MODE_CHANGED)
-            addAction(HyperPodsAction.ACTION_PODS_SPATIAL_AUDIO_CHANGED)
-            addAction(HyperPodsAction.ACTION_CONFIG_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_CONNECTED)
+            addAction(MoonPodsAction.ACTION_PODS_DISCONNECTED)
+            addAction(MoonPodsAction.ACTION_PODS_BATTERY_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_ANC_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_GAME_MODE_CHANGED)
+            addAction(MoonPodsAction.ACTION_PODS_SPATIAL_AUDIO_CHANGED)
+            addAction(MoonPodsAction.ACTION_CONFIG_CHANGED)
             // 水月雨线
-            addAction(HyperPodsAction.PODS_CONNECTED)
-            addAction(HyperPodsAction.PODS_DISCONNECTED)
-            addAction(HyperPodsAction.BATTERY_CHANGED)
-            addAction(HyperPodsAction.ANC_CHANGED)
+            addAction(MoonPodsAction.PODS_CONNECTED)
+            addAction(MoonPodsAction.PODS_DISCONNECTED)
+            addAction(MoonPodsAction.BATTERY_CHANGED)
+            addAction(MoonPodsAction.ANC_CHANGED)
         }
         context?.registerReceiver(object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
-                    HyperPodsAction.ACTION_CONFIG_CHANGED -> {
+                    MoonPodsAction.ACTION_CONFIG_CHANGED -> {
                         refreshConfig()
                         notifyHeadsetPropertyChanged(lastAncBatteryController, currentBluetoothDevice(), 10)
                     }
                     // ---- 水月雨线 ----
                     // 融合设备中心只认 HyperOS 那套 1/2/3/4 语义，所以水月雨的档位要先翻译。
-                    HyperPodsAction.PODS_CONNECTED -> {
+                    MoonPodsAction.PODS_CONNECTED -> {
                         currentBrand = PodBrand.MOONDROP
-                        currentAddress = intent.getStringExtra(HyperPodsAction.EXTRA_MAC) ?: currentAddress
-                        currentName = intent.getStringExtra(HyperPodsAction.EXTRA_DEVICE_NAME) ?: currentName
+                        currentAddress = intent.getStringExtra(MoonPodsAction.EXTRA_MAC) ?: currentAddress
+                        currentName = intent.getStringExtra(MoonPodsAction.EXTRA_DEVICE_NAME) ?: currentName
                     }
-                    HyperPodsAction.PODS_DISCONNECTED -> {
-                        currentAddress = intent.getStringExtra(HyperPodsAction.EXTRA_MAC) ?: currentAddress
+                    MoonPodsAction.PODS_DISCONNECTED -> {
+                        currentAddress = intent.getStringExtra(MoonPodsAction.EXTRA_MAC) ?: currentAddress
                         currentProductId = null
                     }
-                    HyperPodsAction.BATTERY_CHANGED -> {
+                    MoonPodsAction.BATTERY_CHANGED -> {
                         currentBrand = PodBrand.MOONDROP
-                        currentAddress = intent.getStringExtra(HyperPodsAction.EXTRA_MAC) ?: currentAddress
+                        currentAddress = intent.getStringExtra(MoonPodsAction.EXTRA_MAC) ?: currentAddress
                         currentBattery = intent.batteryStatusCompat() ?: currentBattery
                         saveState(context)
                     }
-                    HyperPodsAction.ANC_CHANGED -> {
-                        currentAddress = intent.getStringExtra(HyperPodsAction.EXTRA_MAC) ?: currentAddress
+                    MoonPodsAction.ANC_CHANGED -> {
+                        currentAddress = intent.getStringExtra(MoonPodsAction.EXTRA_MAC) ?: currentAddress
                         currentBrand = PodBrand.MOONDROP
-                        intent.getStringArrayListExtra(HyperPodsAction.EXTRA_ANC_IDS)?.let { currentAncIds = it }
-                        currentAncIndex = intent.getIntExtra(HyperPodsAction.EXTRA_STATUS, currentAncIndex)
+                        intent.getStringArrayListExtra(MoonPodsAction.EXTRA_ANC_IDS)?.let { currentAncIds = it }
+                        currentAncIndex = intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, currentAncIndex)
                         currentAnc = oppoAncOfMoondrop(currentAncIds.getOrNull(currentAncIndex))
                         Log.i(TAG, "ANC_CHANGED: ids=${currentAncIds.size} idx=$currentAncIndex anc=$currentAnc")
                         saveState(context)
@@ -277,7 +277,7 @@ object MiLinkServiceHook : HookContext() {
             }
         }, filter, Context.RECEIVER_EXPORTED)
         receiverRegistered = true
-        context?.sendBroadcast(Intent(HyperPodsAction.ACTION_PODS_UI_INIT).apply {
+        context?.sendBroadcast(Intent(MoonPodsAction.ACTION_PODS_UI_INIT).apply {
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         })
@@ -499,9 +499,9 @@ object MiLinkServiceHook : HookContext() {
             return
         }
         runCatching {
-            ctx.sendBroadcast(Intent(HyperPodsAction.ANC_SELECT).apply {
+            ctx.sendBroadcast(Intent(MoonPodsAction.ANC_SELECT).apply {
                 setPackage("com.android.bluetooth")
-                putExtra(HyperPodsAction.EXTRA_STATUS, index)
+                putExtra(MoonPodsAction.EXTRA_STATUS, index)
                 addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             })
         }.onFailure { Log.w(TAG, "selectMoondropAnc broadcast failed", it) }
@@ -512,7 +512,7 @@ object MiLinkServiceHook : HookContext() {
             Log.w(TAG, "sendOppoAnc skipped: context is null mode=$mode")
             return
         }
-        Intent(HyperPodsAction.ACTION_ANC_SELECT).apply {
+        Intent(MoonPodsAction.ACTION_ANC_SELECT).apply {
             putExtra("status", mode)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -525,7 +525,7 @@ object MiLinkServiceHook : HookContext() {
         // 不含 com.android.settings：设置进程不在作用域里（设置侧 hook 已整体删除），
         // 发过去没有接收方。
         listOf(BuildConfig.APPLICATION_ID, "com.milink.service").forEach { targetPackage ->
-            ctx.sendBroadcast(Intent(HyperPodsAction.ACTION_PODS_ANC_CHANGED).apply {
+            ctx.sendBroadcast(Intent(MoonPodsAction.ACTION_PODS_ANC_CHANGED).apply {
                 putExtra("status", mode)
                 setPackage(targetPackage)
                 addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -535,7 +535,7 @@ object MiLinkServiceHook : HookContext() {
 
     private fun sendOppoGameMode(enabled: Boolean, fallbackContext: Context? = null) {
         val ctx = fallbackContext ?: context ?: return
-        ctx.sendBroadcast(Intent(HyperPodsAction.ACTION_GAME_MODE_SET).apply {
+        ctx.sendBroadcast(Intent(MoonPodsAction.ACTION_GAME_MODE_SET).apply {
             putExtra("enabled", enabled)
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -547,7 +547,7 @@ object MiLinkServiceHook : HookContext() {
             Log.w(TAG, "sendOppoSpatialAudio skipped: context is null mode=$mode")
             return
         }
-        Intent(HyperPodsAction.ACTION_SPATIAL_AUDIO_SET).apply {
+        Intent(MoonPodsAction.ACTION_SPATIAL_AUDIO_SET).apply {
             putExtra("mode", mode.coerceIn(ConfigManager.SPATIAL_AUDIO_OFF, ConfigManager.SPATIAL_AUDIO_HEAD_TRACKING))
             setPackage("com.android.bluetooth")
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
@@ -560,7 +560,7 @@ object MiLinkServiceHook : HookContext() {
         val normalizedMode = mode.coerceIn(ConfigManager.SPATIAL_AUDIO_OFF, ConfigManager.SPATIAL_AUDIO_HEAD_TRACKING)
         // 不含 com.android.settings，理由同 [sendAncChanged]。
         listOf(BuildConfig.APPLICATION_ID, "com.milink.service").forEach { targetPackage ->
-            ctx.sendBroadcast(Intent(HyperPodsAction.ACTION_PODS_SPATIAL_AUDIO_CHANGED).apply {
+            ctx.sendBroadcast(Intent(MoonPodsAction.ACTION_PODS_SPATIAL_AUDIO_CHANGED).apply {
                 currentAddress?.let { putExtra("address", it) }
                 putExtra("mode", normalizedMode)
                 setPackage(targetPackage)

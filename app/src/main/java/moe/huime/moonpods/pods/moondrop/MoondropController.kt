@@ -28,7 +28,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import moe.huime.moonpods.utils.miuiStrongToast.data.BatteryParams
-import moe.huime.moonpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 import moe.huime.moonpods.utils.miuiStrongToast.data.PodParams
 import moe.huime.moonpods.utils.miuiStrongToast.data.putBatteryStatus
 import android.os.Build
@@ -181,38 +181,38 @@ object MoondropController {
         (receiverContext ?: appContext)?.let { init(it) }
         when (intent.action) {
             // 先无条件重放缓存（后打开的消费者缺的就是这一步），再去刷新一次真实状态
-            HyperPodsAction.UI_INIT -> {
+            MoonPodsAction.UI_INIT -> {
                 republishCachedState()
                 refreshAll()
             }
-            HyperPodsAction.REQUEST_CAPABILITIES -> refreshAll()
-            HyperPodsAction.REQUEST_BATTERY -> {
+            MoonPodsAction.REQUEST_CAPABILITIES -> refreshAll()
+            MoonPodsAction.REQUEST_BATTERY -> {
                 republishCachedState()
                 requestBatteryRefresh()
             }
-            HyperPodsAction.ANC_SELECT -> setAnc(intent.getIntExtra(HyperPodsAction.EXTRA_STATUS, -1))
-            HyperPodsAction.GAIN_SELECT -> setGain(intent.getIntExtra(HyperPodsAction.EXTRA_STATUS, -1))
-            HyperPodsAction.LED_SELECT ->
-                setLed(intent.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false))
-            HyperPodsAction.PROMPT_TONE_SELECT ->
-                setPromptTone(intent.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false))
-            HyperPodsAction.PROMPT_VOLUME_SELECT ->
-                setPromptVolumeRaw(intent.getIntExtra(HyperPodsAction.EXTRA_PROMPT_VOLUME_RAW, -1))
-            HyperPodsAction.LHDC_SELECT ->
-                setLhdc(intent.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false))
-            HyperPodsAction.DUAL_CONNECTION_SELECT ->
-                setDualConnection(intent.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false))
+            MoonPodsAction.ANC_SELECT -> setAnc(intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, -1))
+            MoonPodsAction.GAIN_SELECT -> setGain(intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, -1))
+            MoonPodsAction.LED_SELECT ->
+                setLed(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
+            MoonPodsAction.PROMPT_TONE_SELECT ->
+                setPromptTone(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
+            MoonPodsAction.PROMPT_VOLUME_SELECT ->
+                setPromptVolumeRaw(intent.getIntExtra(MoonPodsAction.EXTRA_PROMPT_VOLUME_RAW, -1))
+            MoonPodsAction.LHDC_SELECT ->
+                setLhdc(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
+            MoonPodsAction.DUAL_CONNECTION_SELECT ->
+                setDualConnection(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
             // 空间音频与头部追踪是同一 feature(18) 的两组命令，各走各的 SELECT
-            HyperPodsAction.SPATIAL_AUDIO_SELECT ->
-                setSpatial(intent.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false))
-            HyperPodsAction.HEAD_TRACKING_SELECT ->
-                setHeadTracking(intent.getBooleanExtra(HyperPodsAction.EXTRA_ENABLED, false))
+            MoonPodsAction.SPATIAL_AUDIO_SELECT ->
+                setSpatial(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
+            MoonPodsAction.HEAD_TRACKING_SELECT ->
+                setHeadTracking(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
 
             // 原生耳机页的手势卡片：改某个槽位、某只耳的动作
-            HyperPodsAction.GESTURE_SELECT -> {
-                val slot = intent.getIntExtra(HyperPodsAction.EXTRA_GESTURE_SLOT, -1)
-                val ear = intent.getIntExtra(HyperPodsAction.EXTRA_GESTURE_EAR, -1)
-                val actionId = intent.getIntExtra(HyperPodsAction.EXTRA_STATUS, -1)
+            MoonPodsAction.GESTURE_SELECT -> {
+                val slot = intent.getIntExtra(MoonPodsAction.EXTRA_GESTURE_SLOT, -1)
+                val ear = intent.getIntExtra(MoonPodsAction.EXTRA_GESTURE_EAR, -1)
+                val actionId = intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, -1)
                 val slots = MoondropGaia.GestureSlot.entries
                 val ears = MoondropGaia.Ear.entries
                 if (slot in slots.indices && ear in ears.indices && actionId >= 0) {
@@ -224,7 +224,7 @@ object MoondropController {
 
             // 打开手势页时问一次：有缓存就直接重放，还没有配置就去读一次
             // （refreshGestures 内部自己判 hasGestures）。
-            HyperPodsAction.REQUEST_GESTURE -> {
+            MoonPodsAction.REQUEST_GESTURE -> {
                 if (gestureConf != null) {
                     publishGesture()
                 } else {
@@ -233,8 +233,8 @@ object MoondropController {
             }
 
             // 系统实际协商出来的编码由本进程的蓝牙栈回调汇报
-            HyperPodsAction.CODEC_CHANGED ->
-                intent.getStringExtra(HyperPodsAction.EXTRA_CODEC)?.let(::onSystemCodecChanged)
+            MoonPodsAction.CODEC_CHANGED ->
+                intent.getStringExtra(MoonPodsAction.EXTRA_CODEC)?.let(::onSystemCodecChanged)
 
             else -> Unit
         }
@@ -300,9 +300,9 @@ object MoondropController {
      */
     private fun Intent.withDevice(gone: BluetoothDevice? = null): Intent = apply {
         val d = gone ?: device
-        putExtra(HyperPodsAction.EXTRA_MAC, d?.address)
-        putExtra(HyperPodsAction.EXTRA_DEVICE_NAME, d?.name)
-        putExtra(HyperPodsAction.EXTRA_DEVICE, d)
+        putExtra(MoonPodsAction.EXTRA_MAC, d?.address)
+        putExtra(MoonPodsAction.EXTRA_DEVICE_NAME, d?.name)
+        putExtra(MoonPodsAction.EXTRA_DEVICE, d)
     }
 
     /**
@@ -324,7 +324,7 @@ object MoondropController {
     }
 
     private fun publishConnected() {
-        CONSUMERS.forEach { sendTo(it, HyperPodsAction.PODS_CONNECTED) { i -> i.withDevice() } }
+        CONSUMERS.forEach { sendTo(it, MoonPodsAction.PODS_CONNECTED) { i -> i.withDevice() } }
         publishCapabilities()
         publishBattery()
         publishAnc()
@@ -340,8 +340,8 @@ object MoondropController {
      * 应用侧同理：拿不到 MAC 就不知道该把哪台耳机的界面收掉。
      */
     private fun publishDisconnected(gone: BluetoothDevice?) {
-        CONSUMERS.forEach { sendTo(it, HyperPodsAction.PODS_DISCONNECTED) { i -> i.withDevice(gone) } }
-        sendTo(PKG_XIAOMI_BLUETOOTH, HyperPodsAction.CANCEL_PODS_NOTIFICATION) { i -> i.withDevice(gone) }
+        CONSUMERS.forEach { sendTo(it, MoonPodsAction.PODS_DISCONNECTED) { i -> i.withDevice(gone) } }
+        sendTo(PKG_XIAOMI_BLUETOOTH, MoonPodsAction.CANCEL_PODS_NOTIFICATION) { i -> i.withDevice(gone) }
     }
 
     private fun publishBattery() {
@@ -354,21 +354,21 @@ object MoondropController {
         }
         val params = currentBatteryParams()
         CONSUMERS.forEach { pkg ->
-            sendTo(pkg, HyperPodsAction.BATTERY_CHANGED) { i ->
+            sendTo(pkg, MoonPodsAction.BATTERY_CHANGED) { i ->
                 i.withDevice().putBatteryStatus(params)
             }
         }
         // 写进系统蓝牙栈：融合设备中心与系统蓝牙页显示的电量来自 AdapterService
         val level = batteryState.systemLevel()
         if (level >= 0) {
-            sendTo(PKG_BLUETOOTH, HyperPodsAction.UPDATE_SYSTEM_BATTERY) { i ->
+            sendTo(PKG_BLUETOOTH, MoonPodsAction.UPDATE_SYSTEM_BATTERY) { i ->
                 i.withDevice()
-                    .putExtra(HyperPodsAction.EXTRA_LEVEL, level)
-                    .putExtra(HyperPodsAction.EXTRA_STATUS, level)
+                    .putExtra(MoonPodsAction.EXTRA_LEVEL, level)
+                    .putExtra(MoonPodsAction.EXTRA_STATUS, level)
             }
         }
         // 通知 / 超级岛
-        sendTo(PKG_XIAOMI_BLUETOOTH, HyperPodsAction.UPDATE_PODS_NOTIFICATION) { i ->
+        sendTo(PKG_XIAOMI_BLUETOOTH, MoonPodsAction.UPDATE_PODS_NOTIFICATION) { i ->
             i.withDevice().putBatteryStatus(params)
         }
     }
@@ -379,18 +379,18 @@ object MoondropController {
         val ids = ArrayList<String>(ancModes.size)
         ancModes.forEach { ids.add(it.id) }
         CONSUMERS.forEach { pkg ->
-            sendTo(pkg, HyperPodsAction.ANC_CHANGED) { i ->
+            sendTo(pkg, MoonPodsAction.ANC_CHANGED) { i ->
                 i.withDevice()
-                    .putExtra(HyperPodsAction.EXTRA_STATUS, ancIndex)
-                    .putStringArrayListExtra(HyperPodsAction.EXTRA_ANC_IDS, ids)
+                    .putExtra(MoonPodsAction.EXTRA_STATUS, ancIndex)
+                    .putStringArrayListExtra(MoonPodsAction.EXTRA_ANC_IDS, ids)
             }
         }
     }
 
     private fun publishGain() {
         CONSUMERS.forEach { pkg ->
-            sendTo(pkg, HyperPodsAction.GAIN_CHANGED) { i ->
-                i.withDevice().putExtra(HyperPodsAction.EXTRA_STATUS, gainIndex)
+            sendTo(pkg, MoonPodsAction.GAIN_CHANGED) { i ->
+                i.withDevice().putExtra(MoonPodsAction.EXTRA_STATUS, gainIndex)
             }
         }
     }
@@ -398,8 +398,8 @@ object MoondropController {
     private fun publishLed() {
         val on = ledOn ?: return
         CONSUMERS.forEach { pkg ->
-            sendTo(pkg, HyperPodsAction.LED_CHANGED) { i ->
-                i.withDevice().putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+            sendTo(pkg, MoonPodsAction.LED_CHANGED) { i ->
+                i.withDevice().putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         }
     }
@@ -407,8 +407,8 @@ object MoondropController {
     private fun publishPromptTone() {
         val on = promptToneOn ?: return
         CONSUMERS.forEach { pkg ->
-            sendTo(pkg, HyperPodsAction.PROMPT_TONE_CHANGED) { i ->
-                i.withDevice().putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+            sendTo(pkg, MoonPodsAction.PROMPT_TONE_CHANGED) { i ->
+                i.withDevice().putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         }
     }
@@ -416,8 +416,8 @@ object MoondropController {
     private fun publishPromptVolume() {
         if (promptVolumeRaw < 0) return
         CONSUMERS.forEach { pkg ->
-            sendTo(pkg, HyperPodsAction.PROMPT_VOLUME_CHANGED) { i ->
-                i.withDevice().putExtra(HyperPodsAction.EXTRA_PROMPT_VOLUME_RAW, promptVolumeRaw)
+            sendTo(pkg, MoonPodsAction.PROMPT_VOLUME_CHANGED) { i ->
+                i.withDevice().putExtra(MoonPodsAction.EXTRA_PROMPT_VOLUME_RAW, promptVolumeRaw)
             }
         }
     }
@@ -425,8 +425,8 @@ object MoondropController {
     private fun publishLhdc() {
         val on = lhdcOn ?: return
         CONSUMERS.forEach { pkg ->
-            sendTo(pkg, HyperPodsAction.LHDC_CHANGED) { i ->
-                i.withDevice().putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+            sendTo(pkg, MoonPodsAction.LHDC_CHANGED) { i ->
+                i.withDevice().putExtra(MoonPodsAction.EXTRA_ENABLED, on)
             }
         }
     }
@@ -435,11 +435,11 @@ object MoondropController {
         val on = dualConnectionOn ?: return
         // 融合设备中心是 multipoint 门的判定方：不知道真实值时会一直按「未知」保守处理，
         // 所以这个开关必须送到 milink。
-        sendTo(PKG_MILINK, HyperPodsAction.DUAL_CONNECTION_CHANGED) { i ->
-            i.withDevice().putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+        sendTo(PKG_MILINK, MoonPodsAction.DUAL_CONNECTION_CHANGED) { i ->
+            i.withDevice().putExtra(MoonPodsAction.EXTRA_ENABLED, on)
         }
-        sendTo(PKG_APP, HyperPodsAction.DUAL_CONNECTION_CHANGED) { i ->
-            i.withDevice().putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+        sendTo(PKG_APP, MoonPodsAction.DUAL_CONNECTION_CHANGED) { i ->
+            i.withDevice().putExtra(MoonPodsAction.EXTRA_ENABLED, on)
         }
     }
 
@@ -455,16 +455,16 @@ object MoondropController {
      */
     private fun publishSpatial() {
         val on = spatialOn ?: return
-        sendTo(PKG_APP, HyperPodsAction.SPATIAL_AUDIO_CHANGED) { i ->
-            i.withDevice().putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+        sendTo(PKG_APP, MoonPodsAction.SPATIAL_AUDIO_CHANGED) { i ->
+            i.withDevice().putExtra(MoonPodsAction.EXTRA_ENABLED, on)
         }
     }
 
     /** 头部追踪状态回灌；目标集与理由同 [publishSpatial]。 */
     private fun publishHeadTracking() {
         val on = headTrackingOn ?: return
-        sendTo(PKG_APP, HyperPodsAction.HEAD_TRACKING_CHANGED) { i ->
-            i.withDevice().putExtra(HyperPodsAction.EXTRA_ENABLED, on)
+        sendTo(PKG_APP, MoonPodsAction.HEAD_TRACKING_CHANGED) { i ->
+            i.withDevice().putExtra(MoonPodsAction.EXTRA_ENABLED, on)
         }
     }
 
@@ -476,8 +476,8 @@ object MoondropController {
         // 只发应用进程（PKG_APP —— 模块自己的手势页在那边渲染）：设置进程不在作用域里，
         // 历史上那份发往 com.android.settings 的广播已经没有接收方（见 HookEntry 的说明）。
         // UI 侧一直在等它，见 MainUI 的 GESTURE_CHANGED 分支与 GesturePage 的 conf==null 分支。
-        sendTo(PKG_APP, HyperPodsAction.GESTURE_CHANGED) { i ->
-            i.withDevice().putExtra(HyperPodsAction.EXTRA_GESTURE_PAYLOAD, payload)
+        sendTo(PKG_APP, MoonPodsAction.GESTURE_CHANGED) { i ->
+            i.withDevice().putExtra(MoonPodsAction.EXTRA_GESTURE_PAYLOAD, payload)
         }
     }
 
@@ -502,10 +502,10 @@ object MoondropController {
             putInt(CAP_PROMPT_VOLUME_MAX, model.features.promptVolumeMax)
         }
         CONSUMERS.forEach { pkg ->
-            sendTo(pkg, HyperPodsAction.CAPABILITIES_CHANGED) { i ->
+            sendTo(pkg, MoonPodsAction.CAPABILITIES_CHANGED) { i ->
                 i.withDevice()
-                    .putExtra(HyperPodsAction.EXTRA_CAPS_BUNDLE, bundle)
-                    .putExtra(HyperPodsAction.EXTRA_MODEL_NAME, model.nameZh)
+                    .putExtra(MoonPodsAction.EXTRA_CAPS_BUNDLE, bundle)
+                    .putExtra(MoonPodsAction.EXTRA_MODEL_NAME, model.nameZh)
             }
         }
     }
@@ -519,7 +519,7 @@ object MoondropController {
     private const val PKG_MILINK = "com.milink.service"
     private const val PKG_XIAOMI_BLUETOOTH = "com.xiaomi.bluetooth"
 
-    // 能力包的键名：应用侧从 Bundle 里按这些键读取（见 HyperPodsAction.EXTRA_CAPS_BUNDLE）
+    // 能力包的键名：应用侧从 Bundle 里按这些键读取（见 MoonPodsAction.EXTRA_CAPS_BUNDLE）
     private const val CAP_PROBED = "probed"
     private const val CAP_GAIN = "hasGain"
     private const val CAP_LED = "hasLed"
@@ -1433,8 +1433,8 @@ object MoondropController {
         Log.i(TAG, "system codec -> $codecName")
         // 广播给应用侧：详情页的「当前编码」要显示它，LHDC 切换后也靠它判断是否已生效
         CONSUMERS.forEach { pkg ->
-            sendTo(pkg, HyperPodsAction.CODEC_CHANGED) { i ->
-                i.withDevice().putExtra(HyperPodsAction.EXTRA_CODEC, codecName)
+            sendTo(pkg, MoonPodsAction.CODEC_CHANGED) { i ->
+                i.withDevice().putExtra(MoonPodsAction.EXTRA_CODEC, codecName)
             }
         }
     }
