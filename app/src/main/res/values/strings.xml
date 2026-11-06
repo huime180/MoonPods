@@ -192,4 +192,17 @@
     <string name="system_bluetooth_settings">System Bluetooth settings</string>
     <string name="system_bluetooth_settings_summary">Opens the system Bluetooth settings page</string>
     <string name="active_codec">Current Codec</string>
+
+    <!-- No-root independent link (notification and labels) -->
+    <string name="notification_channel_status">Earbuds status</string>
+    <string name="notification_channel_status_desc">Connection and battery state of the earbuds</string>
+    <string name="notification_disconnect">Disconnect</string>
+    <string name="battery_offline">offline</string>
+    <string name="noroot_connected">Connected</string>
+    <string name="unknown_model">Unknown device</string>
+    <string name="batt_whole">All</string>
+    <string name="batt_left">Left</string>
+    <string name="batt_right">Right</string>
+    <string name="batt_case">Case</string>
+    <string name="batt_unknown">--</string>
 </resources>
