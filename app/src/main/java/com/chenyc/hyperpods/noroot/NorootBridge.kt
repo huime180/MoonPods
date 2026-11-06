@@ -18,6 +18,16 @@ object NorootBridge {
         if (!enabled) NorootLink.disconnect()
     }
 
+    /** 耳机已由系统连上时调用（A2DP 连接事件），开始应用侧直连。 */
+    fun onDeviceConnected(context: Context, device: android.bluetooth.BluetoothDevice) {
+        if (!com.chenyc.hyperpods.config.ConfigManager.norootEnabled()) return
+        NorootLink.connect(context, device)
+        Thread {
+            Thread.sleep(1500)
+            runCatching { NorootLink.requestBattery() }
+        }.start()
+    }
+
     fun init(context: Context) {
         if (!com.chenyc.hyperpods.config.ConfigManager.norootEnabled()) return
         Log.i(TAG, "noroot link requested at startup")
