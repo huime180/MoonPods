@@ -168,6 +168,35 @@ fun SettingsPage(
                     selectedIndex = logLevelValues.indexOf(logLevel.value).coerceAtLeast(0),
                     onSelectedIndexChange = { onLogLevelChange(logLevelValues[it]) }
                 )
+                // 免 root 独立链路开关：只控制应用进程直连，不影响 Root 注入链路
+                run {
+                    val ctx = androidx.compose.ui.platform.LocalContext.current
+                    val prefs = androidx.compose.runtime.remember {
+                        ctx.getSharedPreferences(
+                            com.chenyc.hyperpods.config.ConfigManager.PREFS_NAME,
+                            android.content.Context.MODE_PRIVATE,
+                        )
+                    }
+                    val enabled = androidx.compose.runtime.remember {
+                        androidx.compose.runtime.mutableStateOf(
+                            com.chenyc.hyperpods.config.ConfigManager.norootEnabled()
+                        )
+                    }
+                    SwitchPreference(
+                        title = "免 root 连接",
+                        summary = "应用自己直连耳机，独立于 Root 注入链路",
+                        checked = enabled.value,
+                        onCheckedChange = { value ->
+                            enabled.value = value
+                            com.chenyc.hyperpods.config.ConfigManager.updateNorootEnabled(
+                                prefs,
+                                com.chenyc.hyperpods.MoonPodsApp.xposedService,
+                                value,
+                            )
+                            com.chenyc.hyperpods.noroot.NorootBridge.setEnabled(ctx, value)
+                        },
+                    )
+                }
                 SwitchPreference(
                     title = stringResource(R.string.hide_desktop_icon),
                     summary = stringResource(R.string.hide_desktop_icon_summary),
