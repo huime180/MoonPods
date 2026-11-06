@@ -296,6 +296,50 @@ object MoondropModels {
 
     fun byId(id: String): MoondropModel? = MODELS.firstOrNull { it.id == id }
 
+
+    /**
+     * 本地校准（ANC 映射 / 增益方向）统一来源：Root 模式的 MoondropModelRegistry。
+     *
+     * 两边的 Profile 结构一致，只有 AncMode 枚举是各自包的，所以按 id 转换。
+     * 这样同一机型在两种工作模式下必然用同一份校准表（issue #1 那类错误不会再漂移）。
+     */
+    /** 用 Root 模式的校准覆盖本地档案（保持其它字段不变）。 */
+    private fun withRootCalibration(model: MoondropModel, deviceName: String?): MoondropModel {
+        val (anc, dc) = rootCalibration(deviceName)
+        if (anc == null && dc == null) return model
+        return model.copy(anc = anc ?: model.anc, dc = dc ?: model.dc)
+    }
+
+    private fun rootCalibration(deviceName: String?): Pair<AncProfile?, DcProfile?> {
+        val root = runCatching {
+            moe.huime.moonpods.pods.moondrop.MoondropModelRegistry.match(deviceName)
+        }.getOrNull() ?: return null to null
+        val anc = root.anc?.let { p ->
+            val modes = p.modes.mapNotNull { rm -> AncMode.entries.firstOrNull { it.id == rm.id } }
+            if (modes.isEmpty()) {
+                null
+            } else {
+                AncProfile(
+                    modes = modes,
+                    setMap = p.setMap.copyOf(),
+                    getMap = p.getMap?.copyOf(),
+                    path = p.path?.let { path ->
+                        AncPathKind.entries.firstOrNull { it.name == path.name }
+                    },
+                )
+            }
+        }
+        val dc = DcProfile(
+            hasGain = root.dc.hasGain,
+            gainMap = root.dc.gainMap.copyOf(),
+            gainLabels = root.dc.gainLabels,
+            hasLed = root.dc.hasLed,
+            hasSpatial = root.dc.hasSpatial,
+            hasHeadTracking = root.dc.hasHeadTracking,
+        )
+        return anc to dc
+    }
+
     /**
      * 按蓝牙设备名匹配型号。
      * 命中顺序：别名长度降序的 contains 匹配。
@@ -306,14 +350,15 @@ object MoondropModels {
         val n = deviceName?.uppercase()?.trim()
         if (n.isNullOrEmpty()) return null
         for ((alias, model) in BY_ALIAS) {
-            if (n.contains(alias)) return model
+            if (n.contains(alias)) return withRootCalibration(model, deviceName)
         }
         // 官方云端目录兜底（与官方 APP 同源）：官方命名/拼写变体（UTCS、SP2…）与新机型
         // 都能认出来。目录没拉到或没命中时返回 null，行为与以前完全一致。
         // 云端目录复用 Root 模式那一份（pods/moondrop/MoondropCatalog），避免两套目录漂移
         RootMoondropCatalog.resolve(deviceName)?.let {
-            return catalogModel(
-                MoondropCatalog.Entry(name = it.name, key = it.key, chipRoot = it.chipRoot)
+            return withRootCalibration(
+                catalogModel(MoondropCatalog.Entry(name = it.name, key = it.key, chipRoot = it.chipRoot)),
+                deviceName,
             )
         }
         if (n.contains("MOONDROP") || n.contains("水月雨")) return FALLBACK

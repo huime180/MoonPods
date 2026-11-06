@@ -8,7 +8,6 @@ import moe.huime.moonpods.pods.moondrop.MoondropGaia
 
 import moe.huime.moonpods.noroot.AncMode
 import moe.huime.moonpods.noroot.BATTERY_UNKNOWN
-import moe.huime.moonpods.noroot.Gaia
 
 /** 连接后探测到的能力。凡是从位图/真实回包得到的信息都放这里。 */
 data class PodCapabilities(
