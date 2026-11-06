@@ -161,6 +161,12 @@ object NorootBridge : PodListener {
         if (snap == lastBroadcast) return
         lastBroadcast = snap
         broadcastState(snap)
+        if (event is PodEvent.Connected) {
+            // 连上后把全部功能读一遍：快照里 gain/led/prompt/lhdc/dual 读到之前是 null，
+            // 不读的话界面就只有降噪一个控件。
+            runCatching { MoondropLink.refreshAll() }
+            maybeShowPopup()
+        }
     }
 
     /**
@@ -236,6 +242,19 @@ object NorootBridge : PodListener {
             }
         }
         NorootNotification.post(ctx, snap)
+    }
+
+    /** 连接弹窗：仅在授予「显示在其他应用上层」时尝试，失败只记日志。 */
+    private fun maybeShowPopup() {
+        val ctx = appContext ?: return
+        val allowed = runCatching { android.provider.Settings.canDrawOverlays(ctx) }.getOrDefault(false)
+        if (!allowed) return
+        runCatching {
+            ctx.startActivity(Intent(ctx, moe.huime.moonpods.PopupActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                putExtra("from_noroot_connect", true)
+            })
+        }.onFailure { Log.w(TAG, "popup launch failed", it) }
     }
 
     /** 最近一次连接的设备（广播里要带上 EXTRA_DEVICE，通知与原生页都依赖它）。 */

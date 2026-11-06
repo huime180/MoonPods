@@ -38,7 +38,7 @@ object NorootNotification {
             NotificationChannel(
                 CHANNEL_ID,
                 ctx.getString(R.string.noroot_channel_name),
-                NotificationManager.IMPORTANCE_LOW,
+                NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
                 description = ctx.getString(R.string.noroot_channel_desc)
                 setShowBadge(false)
@@ -79,13 +79,27 @@ object NorootNotification {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        val title = snap.deviceName.ifBlank { snap.modelName.ifBlank { "MOONDROP" } }
+        val focusExtras = runCatching {
+            com.xzakota.hyper.notification.focus.FocusNotification.buildV3 {
+                enableFloat = true
+                ticker = title
+                updatable = true
+                iconTextInfo {
+                    this.title = title
+                    content = text
+                }
+            }
+        }.getOrNull()
+
         val builder = Notification.Builder(ctx, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_anc)
-            .setContentTitle(snap.deviceName.ifBlank { snap.modelName.ifBlank { "MOONDROP" } })
+            .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(openIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .apply { focusExtras?.let { addExtras(it) } }
 
         // 与 Root 模式一致：只保留「断开连接」一个动作（降噪在耳机页/控制中心操作）
         builder.addAction(
