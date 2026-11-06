@@ -142,6 +142,7 @@ object NorootBridge : PodListener {
     @Volatile private var lastBroadcast: PodSnapshot? = null
 
     override fun onEvent(event: PodEvent) {
+        Log.i(TAG, "event=${event.javaClass.simpleName} connected=${runCatching { MoondropLink.snapshot().connected }.getOrElse { false }}")
         _lastEvent.value = event
         // 逐帧的调试事件不参与状态广播：否则每来一包就发三条广播，界面会卡死
         if (event is PodEvent.Frame) return
@@ -158,8 +159,12 @@ object NorootBridge : PodListener {
             }
             return
         }
-        if (snap == lastBroadcast) return
+        if (snap == lastBroadcast) {
+            Log.i(TAG, "broadcast skipped (unchanged)")
+            return
+        }
         lastBroadcast = snap
+        Log.i(TAG, "broadcast state: anc=${snap.ancIndex}/${snap.ancModes.size} gain=${snap.gainIndex} led=${snap.ledOn} lhdc=${snap.lhdcOn} dual=${snap.dualConnectionOn}")
         broadcastState(snap)
         if (event is PodEvent.Connected) {
             // 连上后把全部功能读一遍：快照里 gain/led/prompt/lhdc/dual 读到之前是 null，
