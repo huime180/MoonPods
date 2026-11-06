@@ -92,12 +92,24 @@ fun SettingsPage(
         stringResource(R.string.log_level_basic),
         stringResource(R.string.log_level_debug),
     )
-    val islandModeValues = listOf(ConfigManager.ISLAND_MODE_NONE, ConfigManager.ISLAND_MODE_OFFICIAL, ConfigManager.ISLAND_MODE_MODULE)
-    val islandModeOptions = listOf(
-        stringResource(R.string.island_mode_none),
-        stringResource(R.string.island_mode_official),
-        stringResource(R.string.island_mode_module),
-    )
+    // 官方超级岛依赖 hook（通知由小米蓝牙进程发布）：免 root 模式下不提供
+    val islandModeValues = if (workMode.value == ConfigManager.WORK_MODE_ROOT) {
+        listOf(ConfigManager.ISLAND_MODE_NONE, ConfigManager.ISLAND_MODE_OFFICIAL, ConfigManager.ISLAND_MODE_MODULE)
+    } else {
+        listOf(ConfigManager.ISLAND_MODE_NONE, ConfigManager.ISLAND_MODE_MODULE)
+    }
+    val islandModeOptions = if (workMode.value == ConfigManager.WORK_MODE_ROOT) {
+        listOf(
+            stringResource(R.string.island_mode_none),
+            stringResource(R.string.island_mode_official),
+            stringResource(R.string.island_mode_module),
+        )
+    } else {
+        listOf(
+            stringResource(R.string.island_mode_none),
+            stringResource(R.string.island_mode_module),
+        )
+    }
     val islandShowTimingOptions = listOf(
         ConfigManager.ISLAND_SHOW_TIMING_CONNECTED to stringResource(R.string.island_show_timing_connected),
         ConfigManager.ISLAND_SHOW_TIMING_WEARING to stringResource(R.string.island_show_timing_wearing),
