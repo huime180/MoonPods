@@ -101,6 +101,8 @@ object HeadsetStateDispatcher : HookContext() {
                 if (currState == BluetoothHeadset.STATE_CONNECTED) {
                     statusBarManager.setIconVisibility("wireless_headset", true)
                     MoondropController.init(context)
+                    moe.huime.moonpods.pods.WorkModeBridge.override =
+                        moe.huime.moonpods.config.ConfigManager.WORK_MODE_ROOT
                     MoondropController.connect(device)
                 } else if (currState == BluetoothHeadset.STATE_DISCONNECTING || currState == BluetoothHeadset.STATE_DISCONNECTED) {
                     statusBarManager.setIconVisibility("wireless_headset", false)
