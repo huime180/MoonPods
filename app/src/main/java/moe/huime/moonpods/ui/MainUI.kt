@@ -216,7 +216,7 @@ fun MainUI(
     /** 水月雨的命令统一以广播发回协议栈所在的进程（com.android.bluetooth）。 */
     fun moondropSend(action: String, configure: (Intent) -> Unit = {}) {
         context.sendBroadcast(Intent(action).apply {
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             configure(this)
         })
     }
@@ -651,7 +651,7 @@ fun MainUI(
         }
         Intent(MoonPodsAction.ACTION_ANC_SELECT).apply {
             this.putExtra("status", status)
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             context.sendBroadcast(this)
         }
@@ -661,7 +661,7 @@ fun MainUI(
         gameMode.value = enabled
         Intent(MoonPodsAction.ACTION_GAME_MODE_SET).apply {
             this.putExtra("enabled", enabled)
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             context.sendBroadcast(this)
         }
@@ -671,7 +671,7 @@ fun MainUI(
         transparencyVocalEnhancement.value = enabled
         Intent(MoonPodsAction.ACTION_TRANSPARENCY_VOCAL_ENHANCEMENT_SET).apply {
             this.putExtra("enabled", enabled)
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             context.sendBroadcast(this)
         }
@@ -705,7 +705,7 @@ fun MainUI(
         } else {
             Intent(MoonPodsAction.ACTION_CONNECT_POD_REQUEST).apply {
                 putExtra("device", device)
-                setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+                setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
                 addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
                 context.sendBroadcast(this)
             }
@@ -718,7 +718,7 @@ fun MainUI(
         prefs.edit().putInt("spatial_audio_mode", normalizedMode).apply()
         Intent(MoonPodsAction.ACTION_SPATIAL_AUDIO_SET).apply {
             this.putExtra("mode", normalizedMode)
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             context.sendBroadcast(this)
         }
@@ -728,7 +728,7 @@ fun MainUI(
         eqPreset.value = preset
         Intent(MoonPodsAction.ACTION_EQ_PRESET_SET).apply {
             this.putExtra("preset", preset)
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             context.sendBroadcast(this)
         }
@@ -749,7 +749,7 @@ fun MainUI(
             putIntegerArrayListExtra("gains", ArrayList(gains))
             putExtra("min_value", minValue)
             putExtra("max_value", maxValue)
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             context.sendBroadcast(this)
         }
@@ -761,7 +761,7 @@ fun MainUI(
                 MoonPodsAction.EXTRA_EQ_ENTRIES_JSON,
                 Json.encodeToString(ListSerializer(EqDevicePreset.serializer()), listOf(entry)),
             )
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             context.sendBroadcast(this)
         }
@@ -771,7 +771,7 @@ fun MainUI(
         dualDeviceConnection.value = enabled
         Intent(MoonPodsAction.ACTION_DUAL_DEVICE_CONNECTION_SET).apply {
             this.putExtra("enabled", enabled)
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             context.sendBroadcast(this)
         }
@@ -790,7 +790,7 @@ fun MainUI(
         // 页面只发请求，避免两处逻辑各断一次、行为不一致。
         Intent(MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST).apply {
             putExtra("device", device)
-            setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+            setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             context.sendBroadcast(this)
         }
@@ -862,7 +862,7 @@ fun MainUI(
     fun refreshStatus() {
         if (hookConnected.value) {
             context.sendBroadcast(Intent(MoonPodsAction.ACTION_REFRESH_STATUS).apply {
-                setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
+                setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
                 addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             })
         }

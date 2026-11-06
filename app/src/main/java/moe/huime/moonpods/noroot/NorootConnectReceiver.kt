@@ -27,16 +27,8 @@ class NorootConnectReceiver : BroadcastReceiver() {
             return
         }
         if (state != BluetoothProfile.STATE_CONNECTED) return
-        // 进程可能刚被拉起：ConfigManager 缓存还没初始化时默认值是 Root，
-        // 所以这里直接读一次 prefs，避免误判成 Root 而放弃连接。
-        val prefs = runCatching {
-            context.getSharedPreferences(moe.huime.moonpods.config.ConfigManager.PREFS_NAME, Context.MODE_PRIVATE)
-        }.getOrNull()
-        val mode = runCatching { prefs?.getInt("work_mode", -1) ?: -1 }.getOrDefault(-1)
-        val workMode = if (mode >= 0) mode else runCatching {
-            moe.huime.moonpods.config.ConfigManager.workMode()
-        }.getOrDefault(moe.huime.moonpods.config.ConfigManager.WORK_MODE_ROOT)
-        if (workMode != moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) return
+        // 链路形态只判定一次（LinkMode 内部缓存），不再每次事件都读配置
+        if (!moe.huime.moonpods.config.LinkMode.isNoRoot(context)) return
         // 只接管识别得出的水月雨机型；认不出来就不碰
         val name = runCatching { device.name ?: device.alias }.getOrNull()
         if (NorootBridge.matchModel(name) == null) return
