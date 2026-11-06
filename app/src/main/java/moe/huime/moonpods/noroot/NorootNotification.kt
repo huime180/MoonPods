@@ -13,32 +13,43 @@ import moe.huime.moonpods.R
 import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 
 /**
- * 免 root 模式**自己的**通知。
+ * 免 root 模式的耳机状态通知。
  *
- * Root 模式的耳机通知由 MIUI 蓝牙进程发（我们 hook 它，走小米原生体验）；
- * 免 root 模式没有那个进程，所以由应用自己发这一条：
- *   · 常驻、静默（无声音无震动）；
- *   · 显示机型 + 三路电量；
- *   · 点击打开应用，「断开连接」直接断本应用的链路。
+ * 设计对齐 miuixmoondrop 的 PodNotification：一条常驻、静默的状态通知，承载
+ * 机型名、三路电量、降噪三态快捷切换与断开操作；不做前台服务，生命周期跟随应用进程。
  *
- * 刻意不做前台服务：通知只是状态展示，链路生命周期跟应用进程一致。
+ * 通道：id = moonpods_device_status，用户可见名称「耳机状态」/「Earbuds status」。
  */
 object NorootNotification {
 
-    private const val TAG = "MoonPods-NorootNotify"
+    private const val TAG = "MoonPods-Notification"
     private const val CHANNEL_ID = "moonpods_device_status"
     private const val NOTIFICATION_ID = 10005
 
+    /**
+     * 通知里的降噪三态：与 HyperOS 的 关 / 降噪 / 通透 一一对应。
+     *
+     * 族归属按设备上报的 id 判定：降噪族含 anc / anti_wind / adaptive，
+     * 通透族含 transparent / live —— 与耳机页的家族口径一致。
+     */
+    private data class AncAction(val labelRes: Int, val ids: Set<String>)
+
+    private val ANC_ACTIONS = listOf(
+        AncAction(R.string.noroot_action_anc_off, setOf("off")),
+        AncAction(R.string.noroot_action_anc_on, setOf("anc", "anti_wind", "adaptive")),
+        AncAction(R.string.noroot_action_anc_transparency, setOf("transparent", "live")),
+    )
+
     fun channel(ctx: Context) {
         val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
-        val existing = runCatching { nm.getNotificationChannel(CHANNEL_ID) }.getOrNull()
-        if (existing != null) return
+        if (runCatching { nm.getNotificationChannel(CHANNEL_ID) }.getOrNull() != null) return
         nm.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
                 ctx.getString(R.string.noroot_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
+                description = ctx.getString(R.string.noroot_channel_desc)
                 setShowBadge(false)
                 enableVibration(false)
                 setSound(null, null)
@@ -50,31 +61,63 @@ object NorootNotification {
         if (!snap.connected) return
         channel(ctx)
         val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
+
         val battery = snap.battery
         val parts = buildList {
             if (battery.leftKnown) add("L ${battery.left}%")
             if (battery.rightKnown) add("R ${battery.right}%")
-            if (battery.caseKnown) add("盒 ${battery.case}%")
+            if (battery.caseKnown) add("C ${battery.case}%")
         }
-        val text = if (parts.isEmpty()) "已连接" else parts.joinToString(" · ")
+        val text = parts.joinToString(" · ").ifEmpty { ctx.getString(R.string.noroot_connected) }
+
         val openIntent = PendingIntent.getActivity(
-            ctx, 0, Intent(ctx, MainActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            ctx,
+            0,
+            Intent(ctx, MainActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val disconnectIntent = PendingIntent.getBroadcast(
-            ctx, 1, Intent(MoonPodsAction.NOROOT_DISCONNECT).setPackage(BuildConfig.APPLICATION_ID),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val notification = Notification.Builder(ctx, CHANNEL_ID)
+
+        val builder = Notification.Builder(ctx, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_anc)
             .setContentTitle(snap.deviceName.ifBlank { snap.modelName.ifBlank { "MOONDROP" } })
             .setContentText(text)
             .setContentIntent(openIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .addAction(Notification.Action.Builder(null, "断开连接", disconnectIntent).build())
-            .build()
-        runCatching { nm.notify(NOTIFICATION_ID, notification) }
+
+        // 降噪三态快捷切换：仅在设备上报的档位表里存在对应家族时出现
+        ANC_ACTIONS.forEachIndexed { i, action ->
+            val target = snap.ancModes.indexOfFirst { it.id in action.ids }
+            if (target < 0) return@forEachIndexed
+            builder.addAction(
+                Notification.Action.Builder(
+                    null,
+                    ctx.getString(action.labelRes),
+                    PendingIntent.getBroadcast(
+                        ctx,
+                        10 + i,
+                        Intent(MoonPodsAction.ANC_SELECT)
+                            .setPackage(BuildConfig.APPLICATION_ID)
+                            .putExtra(MoonPodsAction.EXTRA_STATUS, target),
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    ),
+                ).build()
+            )
+        }
+        builder.addAction(
+            Notification.Action.Builder(
+                null,
+                ctx.getString(R.string.noroot_action_disconnect),
+                PendingIntent.getBroadcast(
+                    ctx,
+                    20,
+                    Intent(MoonPodsAction.NOROOT_DISCONNECT).setPackage(BuildConfig.APPLICATION_ID),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
+            ).build()
+        )
+
+        runCatching { nm.notify(NOTIFICATION_ID, builder.build()) }
             .onFailure { Log.w(TAG, "notify failed", it) }
     }
 
