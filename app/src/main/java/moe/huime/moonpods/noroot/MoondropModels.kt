@@ -222,11 +222,16 @@ object MoondropModels {
         AncPathKind.AUDIO_CURATION,
     )
 
-    /** 布丁 PUDDING 五档：UI[关,降,透,抗,自适应] → dev [0,4,2,3,1]，走 ANC_V2 恒等读回。 */
+    /**
+     * 布丁 PUDDING 五档：ANC_V2 标准枚举直传（0 关 / 1 基础 / 2 通透 / 3 抗风 / 4 自适应）。
+     *
+     * 与 Root 模式（pods/moondrop/MoondropModelRegistry.ancPudding）保持一致：
+     * 旧映射 [0,4,2,3,1] 来自上游错误文档，基础降噪与自适应会被互换（issue #1）。
+     */
     private fun ancPudding() = AncProfile(
         ANC_5,
-        intArrayOf(0, 4, 2, 3, 1),
-        intArrayOf(0, 4, 2, 3, 1),
+        intArrayOf(0, 1, 2, 3, 4),
+        intArrayOf(0, 1, 2, 3, 4),
         AncPathKind.ANC_V2,
     )
 
@@ -336,7 +341,7 @@ object MoondropModels {
      * 未命中的型号不猜，直接交给能力探测的默认值。
      *
      * 目前只挂布丁（用户实测反馈：空清单后 ANC 不可用、增益反向）：
-     *  · ANC_V2 档位：UI[关,降,透,抗,自适应] → dev [0,4,2,3,1]（PuddingPods 文档 + 真机确认）
+     *  · ANC_V2 档位：UI[关,降,透,抗,自适应] → dev [0,1,2,3,4]（官方 AncV2Handler 标准枚举）
      *  · 增益：设备码 0=高 / 1=中 / 2=低 → UI[低,中,高] 需映射 [2,1,0]
      */
     private fun calibrationFor(key: String): Pair<AncProfile?, DcProfile> = when {
