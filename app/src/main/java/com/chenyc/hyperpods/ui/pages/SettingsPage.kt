@@ -44,8 +44,6 @@ fun SettingsPage(
     onNotificationClickActionChange: (Int) -> Unit = {},
     moreClickAction: MutableState<Int> = mutableStateOf(ConfigManager.MORE_CLICK_MODULE),
     onMoreClickActionChange: (Int) -> Unit = {},
-    fakeDeviceId: MutableState<String> = mutableStateOf(ConfigManager.DEFAULT_FAKE_DEVICE_ID),
-    onFakeDeviceIdChange: (String) -> Unit = {},
     onOpenTheme: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenOppoOnly: () -> Unit = {}
@@ -210,17 +208,6 @@ fun SettingsPage(
                         onSelectedIndexChange = { onMoreClickActionChange(moreClickActionValues[it]) }
                     )
                 }
-                BasicComponent(
-                    title = stringResource(R.string.fake_device_id),
-                    summary = stringResource(R.string.fake_device_id_summary)
-                )
-                TextField(
-                    value = fakeDeviceId.value,
-                    onValueChange = { onFakeDeviceIdChange(it.trim()) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                )
             }
         }
 

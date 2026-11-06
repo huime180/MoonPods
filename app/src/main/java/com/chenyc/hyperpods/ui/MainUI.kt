@@ -193,7 +193,6 @@ fun MainUI(
     val moreClickAction = remember { mutableStateOf(appConfig.moreClickAction) }
     val desktopIconHidden = remember { mutableStateOf(isLauncherIconHidden(context)) }
     val logLevel = remember { mutableStateOf(appConfig.logLevel) }
-    val fakeDeviceId = remember { mutableStateOf(appConfig.fakeDeviceId) }
     val islandMode = remember { mutableStateOf(appConfig.islandMode) }
     val islandShowTimings = remember { mutableStateOf(appConfig.islandShowTimings) }
     val spatialAudioMode = remember { mutableStateOf(prefs.getInt("spatial_audio_mode", ConfigManager.SPATIAL_AUDIO_OFF)) }
@@ -1039,14 +1038,6 @@ fun MainUI(
                     ConfigManager.updateMoreClickAction(prefs, xposedService, it)
                 },
                 onOpenRfcommDebug = { backStack.add(Screen.RfcommDebug) },
-                fakeDeviceId = fakeDeviceId,
-                onFakeDeviceIdChange = {
-                    fakeDeviceId.value = it
-                    ConfigManager.updateFakeDeviceId(prefs, xposedService, it)
-                    broadcastConfigChanged(context, "com.android.bluetooth")
-                    broadcastConfigChanged(context, "com.milink.service")
-                    broadcastConfigChanged(context, "com.xiaomi.bluetooth")
-                },
                 onOpenTheme = { backStack.add(Screen.Theme) },
                 onOpenAbout = { backStack.add(Screen.About) },
                 onOpenOppoOnly = { backStack.add(Screen.OppoOnly) },
