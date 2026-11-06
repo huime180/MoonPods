@@ -26,6 +26,11 @@ data class MoondropCapabilities(
      * 也不做型号档案标记）。
      */
     val hasGestures: Boolean = false,
+    /**
+     * 低延迟模式：HyperOS 系统侧功能（A2DP 会话的低延迟配置），不是 GAIA 命令，
+     * 因此不依赖能力位图。
+     */
+    val hasLowLatency: Boolean = false,
     /** 探测是否已经完成（避免 UI 在探测中途闪来闪去） */
     val probed: Boolean = false,
 ) {
@@ -39,7 +44,7 @@ data class MoondropCapabilities(
             hasHeadTracking == other.hasHeadTracking && hasPromptTone == other.hasPromptTone &&
             hasPromptVolume == other.hasPromptVolume && hasLhdc == other.hasLhdc &&
             hasDualConnection == other.hasDualConnection && hasGestures == other.hasGestures &&
-            probed == other.probed
+            hasLowLatency == other.hasLowLatency && probed == other.probed
     }
 
     override fun hashCode(): Int = features.hashCode() * 31 + ancPath

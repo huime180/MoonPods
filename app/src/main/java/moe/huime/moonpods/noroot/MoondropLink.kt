@@ -564,7 +564,7 @@ object MoondropLink {
     private suspend fun afterConnected() {
         // 先用上次探测结果渲染（每台机型只探测一次）
         val cacheKey = model.id
-        moe.huime.moonpods.pods.moondrop.CapabilityCache.loadPod(cacheKey)?.let { cached ->
+        moe.huime.moonpods.pods.moondrop.CapabilityCache.load(cacheKey)?.let { cached ->
             capabilities = cached
             Log.i(TAG, "capabilities from cache: ${cached.features.sorted()}")
         }
@@ -666,7 +666,7 @@ object MoondropLink {
             hasGestures = MoondropGaia.F_TOUCHV2 in feats,
             hasLowLatency = model.features.lowLatency,
             probed = true,
-        ).also { moe.huime.moonpods.pods.moondrop.CapabilityCache.savePod(model.id, it) }
+        ).also { moe.huime.moonpods.pods.moondrop.CapabilityCache.save(model.id, it) }
         ancModes = model.anc?.modes ?: emptyList()
         emit(PodEvent.CapabilitiesChanged(capabilities))
         Log.i(TAG, "capabilities: $capabilities")
