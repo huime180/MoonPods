@@ -887,9 +887,24 @@ object MoondropLink {
     // 各功能：写（乐观更新 + 读回确认）
     // ══════════════════════════════════════════════════════════════════════
 
+    /**
+     * 能力探测失败时（例如连接初期丢包），用型号档案里的 ANC 路径兜底，
+     * 否则 `when (ancPath)` 落到 else，命令根本不发 —— 表现就是「控制无效」。
+     */
+    private fun effectiveAncPath(): Int {
+        val probed = capabilities.ancPath
+        if (probed != MoondropGaia.ANC_PATH_UNKNOWN) return probed
+        return when (model.anc?.path) {
+            AncPathKind.ANC_V2 -> MoondropGaia.ANC_PATH_ANC_V2
+            AncPathKind.AUDIO_CURATION -> MoondropGaia.ANC_PATH_AUDIO_CURATION
+            AncPathKind.ANC_V1 -> MoondropGaia.ANC_PATH_ANC_V1
+            null -> MoondropGaia.ANC_PATH_UNKNOWN
+        }
+    }
+
     fun setAnc(uiIndex: Int) {
         scope.launch {
-            when (capabilities.ancPath) {
+            when (effectiveAncPath()) {
                 MoondropGaia.ANC_PATH_ANC_V2 -> {
                     // 官方 AncV2Handler 枚举：OFF=0/ON=1/TRANSPARENT=2/ANTI_WIND=3/
                     // ADAPTIVE=4/LIVE=5，与 UI 顺序一致 → **未校准时恒等**；只有型号档案
