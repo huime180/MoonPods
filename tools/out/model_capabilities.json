@@ -1,0 +1,495 @@
+[
+ {
+  "name": "MOONDROP Dots",
+  "uuid": "40f974ad-f5be-4174-817d-bed662d24a80",
+  "chip": "jieli",
+  "eqBands": 10,
+  "qRange": "0.3~10",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "ZZZ-ANGELS-OWS",
+  "uuid": "d0c111d3-de13-42cb-ade0-fb615358eb9c",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "MOONDROP The Garden",
+  "uuid": "2bd187a1-bae1-4f66-bd7e-895d3c8e3f15",
+  "chip": "airoha",
+  "eqBands": 10,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "MOONDROP MIRAGE",
+  "uuid": "e9aa2b61-74d5-451f-995d-254d3a9e6666",
+  "chip": "jieli",
+  "eqBands": 10,
+  "qRange": "0.3~10",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Moondrop EVO 2",
+  "uuid": "b3c589a2-9310-499f-ae70-f7e96582f604",
+  "chip": "bluetrum",
+  "eqBands": 10,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "MOONDROP EDGE 2",
+  "uuid": "6acdf4b2-1a95-4072-8505-02e6c4d1c929",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "MOONDROP MM3A",
+  "uuid": "7898e618-1559-4bf4-8edc-79924a796906",
+  "chip": "bluetrumusb",
+  "eqBands": 8,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "MOONDROP EVO 2",
+  "uuid": "978a9b67-8314-4481-8ab6-e6160aba0e94",
+  "chip": "bluetrum",
+  "eqBands": 10,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "MOONDROP Pudding",
+  "uuid": "291a21ef-bca1-4cf1-baf8-151c457bf082",
+  "chip": "jieli",
+  "eqBands": 10,
+  "qRange": "0.3~10",
+  "functions": [
+   "/jieli",
+   "/jieli/lhdc",
+   "/jieli/eq",
+   "/jieli/peq",
+   "/jieli/led",
+   "/jieli/ancV2",
+   "/jieli/voicecontrol",
+   "/jieli/voiceswitch",
+   "/jieli/adaptiveanc",
+   "/jieli/adaptiveancV2",
+   "/jieli/prompttoneswitch",
+   "/jieli/onebringtwoV2",
+   "/jieli/onebringtwo",
+   "/jieli/setting",
+   "/jieli/touchV2",
+   "/jieli/ota"
+  ],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "H.I.D.E.404_Klukai",
+  "uuid": "44f498b3-a54f-4f47-bcc1-a6faa53c6129",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "PANDAER Space Travel 2",
+  "uuid": "b7a71fef-9c42-4e47-a8d5-b5007f0f6cbc",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "LAPLACE-OBA-Ⅱ",
+  "uuid": "0767fc45-888d-4e99-b81d-c0566a42b4a2",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Moondrop U.C.T.S.",
+  "uuid": "134196ff-652b-4671-8de2-9d7e8a7fc6e8",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Pill Yamada Ryo",
+  "uuid": "655903e7-046f-49d8-be63-bbadb3ea7881",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "0.2, 10",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Pill Kita Ikuyo",
+  "uuid": "42b775b3-2781-47f2-95b1-86ef7de4f9bd",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Pill Ijichi Nijika",
+  "uuid": "91e6febd-d61b-4849-9c0f-5d4e9627700d",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Pill Gotoh Hitori",
+  "uuid": "fb36c2bb-845d-4e0a-9b83-193b046bc6cb",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "SPACE TRAVEL 2 ULTRA",
+  "uuid": "35855606-dc03-4dd8-bdf3-89b10b0b259a",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Moondrop Nekocake QBZ-191",
+  "uuid": "eea56fc4-9717-485d-b4bf-f183a95c57f3",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Space Travel 2 Ultra",
+  "uuid": "e56b6195-54a2-47a8-a6a9-409c049befef",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "MOONDROP Pill",
+  "uuid": "20f874df-7f71-4446-880c-95bbc39995d4",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Me 163 Komet MOCA",
+  "uuid": "287fbd9a-76fd-4574-b1fc-75f2c2a56af8",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "SPACE TRAVEL 2",
+  "uuid": "01ae893f-2ad1-47e4-a6de-8c63d52e1042",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Moondrop Golden Ages 2",
+  "uuid": "510aa26a-7745-469c-8940-10835a0d10a3",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "PANDAER Open Air Pill",
+  "uuid": "3795b453-41f8-4f7b-aaa8-2709481a2f91",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Space Travel 2",
+  "uuid": "e9004b3a-1657-4d25-a3b3-6e047ec27686",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "PILL",
+  "uuid": "7afb7e3c-99c6-45be-b0a8-6adb8603643a",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [
+   "/bluetrum",
+   "/bluetrum/touch",
+   "/bluetrum/ota",
+   "/bluetrum/eq",
+   "/bluetrum/onebringtwo",
+   "/bluetrum/setting",
+   "/bluetrum/peq"
+  ],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "MOONDROP EDGE",
+  "uuid": "196a50a7-08ea-4b88-a672-325d5f874a77",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Robin's earphones",
+  "uuid": "041e28d4-00a4-4683-a8b1-581b7df34e08",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "ROBIN'S Earphones",
+  "uuid": "2e69a0de-e47a-4f41-b8a1-8f88905ebc32",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "ROBIN'S EARPHONES",
+  "uuid": "ee424e56-cd97-42e7-aa7c-ab461d2d10c6",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "BIANCA:STIGMATA",
+  "uuid": "134f2d7c-93d2-44e2-ba04-de6157c48860",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Robin's Earphones",
+  "uuid": "d2546c0d-5338-4df2-a88d-d93eb3e74b87",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "MOONDROP x YASUNO KIYONO",
+  "uuid": "2ee9d517-fbf8-4dee-b41b-ffcaa23401c0",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "MOONDROP Ultrasonic",
+  "uuid": "b1e81a50-f27e-4bcf-b879-8c3249447f62",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "MOONDROP MOCA",
+  "uuid": "b539b5c8-4cb4-4765-865a-1467117c0e11",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Moondrop SINGER HEADPHONE IOS",
+  "uuid": "688aebdd-2a08-4bd6-b917-e13df9d63532",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "SINGER HEADPHONE",
+  "uuid": "3d8a7c9e-1118-42b9-a9a7-db685a50e965",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Moondrop SUSANOO TWS IOS",
+  "uuid": "52e9ba82-4b08-43fb-a827-013633b294b6",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "MOONDROP MOON TRAVEL",
+  "uuid": "96f5a091-b245-4939-aeee-50bbf5f840fb",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Moondrop PUNISHING;GRAY RAVEN IOS",
+  "uuid": "f28b8e0a-5f74-4f48-9e05-a9c651563b1a",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "PUNISHING:GRAY RAVEN",
+  "uuid": "61591e02-3292-44d8-9bf7-b1689bbc9d03",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Moondrop Golden Ages",
+  "uuid": "a70f9004-53c9-46bd-bd2a-5f3075006a2a",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "SUSANOO TWS",
+  "uuid": "8890dd99-7cec-43fc-8947-c3673edd2eb3",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Moondrop Space Travel",
+  "uuid": "0374dd80-f3d1-4e49-86b5-0051a995dcdd",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "MOONDROP Voyager",
+  "uuid": "cbab45d3-5d17-4f25-a66a-7f3198f1a8b7",
+  "chip": "qualcomm",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": true
+ },
+ {
+  "name": "Space Force",
+  "uuid": "29cb4cbe-ebb3-4f8f-b0c3-bcc57dbd55b2",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "MOONDROP littlewhite",
+  "uuid": "8eedc494-04fc-44dc-926d-579eaa7ff73f",
+  "chip": "qualcomm",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Moondrop Alice",
+  "uuid": "cc3fece7-fd2f-4ddb-b030-86ca205247bd",
+  "chip": "qualcomm",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Moondrop Nekocake Acht Acht Limited",
+  "uuid": "830368b9-a50c-4f27-bb9e-8965635135a2",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Moondrop Nekocake",
+  "uuid": "179cb29f-80c5-43aa-a6e4-52b05f1aad7a",
+  "chip": "bluetrum",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ },
+ {
+  "name": "Moondrop Sparks",
+  "uuid": "cffb6269-ee1b-4e5a-9ffa-e5387a0aaa3a",
+  "chip": "qualcomm",
+  "eqBands": 5,
+  "qRange": "",
+  "functions": [],
+  "hasFreqResponse": false
+ }
+]

@@ -106,7 +106,8 @@ private fun BatteryColumn(
         lastKnownLevel = level
     }
 
-    val displayLevel = if (isConnected) "$level%" else "-"
+    // 0% 即离线（固件对不在位的耳回报 0），统一显示短横线
+    val displayLevel = if (isConnected && level > 0) "$level%" else "-"
     val iconLevel = if (isConnected) level else lastKnownLevel
 
     // Pad short labels (左/右) to match width of longest label (耳机盒) using ideographic spaces
@@ -137,13 +138,18 @@ private fun BatteryColumn(
                 fontSize = 13.sp,
                 color = Color.Gray
             )
-            Image(
-                painter = themedPainterResource(
-                    getBatteryIconRes(iconLevel, if (isConnected) pod?.isCharging == true else false)
-                ),
-                contentDescription = "$label $displayLevel",
-                modifier = Modifier.size(24.dp)
-            )
+            if (!isConnected || level <= 0) {
+                // 离线只保留上方那条短横线，下面留白与图标等高
+                Spacer(modifier = Modifier.height(24.dp))
+            } else {
+                Image(
+                    painter = themedPainterResource(
+                        getBatteryIconRes(iconLevel, if (isConnected) pod?.isCharging == true else false)
+                    ),
+                    contentDescription = "$label $displayLevel",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }

@@ -1,0 +1,19 @@
+{
+  "7afb7e3c-99c6-45be-b0a8-6adb8603643a": [
+    "/bluetrum",
+    "/bluetrum/touch",
+    "/bluetrum/ota",
+    "/bluetrum/eq",
+    "/bluetrum/onebringtwo",
+    "/bluetrum/setting",
+    "/bluetrum/peq"
+  ],
+  "291a21ef-bca1-4cf1-baf8-151c457bf082": [
+    "/jieli"
+  ],
+  "e39f79d7-3cb1-40c5-987c-982243e19673": [
+    "/synopsys",
+    "/synopsys/eq",
+    "/synopsys/peq"
+  ]
+}

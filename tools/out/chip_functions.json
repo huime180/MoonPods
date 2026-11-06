@@ -1,0 +1,34 @@
+{
+ "jieli": [
+  "/jieli",
+  "/jieli/adaptiveanc",
+  "/jieli/adaptiveancV2",
+  "/jieli/ancV2",
+  "/jieli/eq",
+  "/jieli/led",
+  "/jieli/lhdc",
+  "/jieli/onebringtwo",
+  "/jieli/onebringtwoV2",
+  "/jieli/ota",
+  "/jieli/peq",
+  "/jieli/prompttoneswitch",
+  "/jieli/setting",
+  "/jieli/touchV2",
+  "/jieli/voicecontrol",
+  "/jieli/voiceswitch"
+ ],
+ "bluetrum": [
+  "/bluetrum",
+  "/bluetrum/eq",
+  "/bluetrum/onebringtwo",
+  "/bluetrum/ota",
+  "/bluetrum/peq",
+  "/bluetrum/setting",
+  "/bluetrum/touch"
+ ],
+ "synopsys": [
+  "/synopsys",
+  "/synopsys/eq",
+  "/synopsys/peq"
+ ]
+}
