@@ -87,6 +87,12 @@ object NorootBridge : PodListener {
                 MoonPodsAction.ACTION_CONNECT_POD_REQUEST,
                 MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST,
                 MoonPodsAction.NOROOT_DISCONNECT,
+                MoonPodsAction.UI_INIT,
+                MoonPodsAction.REQUEST_BATTERY,
+                MoonPodsAction.REQUEST_CAPABILITIES,
+                MoonPodsAction.SPATIAL_AUDIO_SELECT,
+                MoonPodsAction.HEAD_TRACKING_SELECT,
+                MoonPodsAction.REQUEST_GESTURE,
             ).forEach { addAction(it) }
         }
         ctx.registerReceiver(object : BroadcastReceiver() {
@@ -99,15 +105,25 @@ object NorootBridge : PodListener {
                         MoonPodsAction.GAIN_SELECT ->
                             MoondropLink.setGain(intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, 0))
                         MoonPodsAction.LED_SELECT ->
-                            MoondropLink.setLed(intent.getBooleanExtra("enabled", false))
+                            MoondropLink.setLed(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
                         MoonPodsAction.PROMPT_TONE_SELECT ->
-                            MoondropLink.setPromptTone(intent.getBooleanExtra("enabled", false))
+                            MoondropLink.setPromptTone(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
                         MoonPodsAction.PROMPT_VOLUME_SELECT ->
-                            MoondropLink.setPromptVolumeRaw(intent.getIntExtra("volume", 0))
+                            MoondropLink.setPromptVolumeRaw(
+                                intent.getIntExtra(MoonPodsAction.EXTRA_PROMPT_VOLUME_RAW, -1)
+                            )
                         MoonPodsAction.LHDC_SELECT ->
-                            MoondropLink.setLhdc(intent.getBooleanExtra("enabled", false))
+                            MoondropLink.setLhdc(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
                         MoonPodsAction.DUAL_CONNECTION_SELECT ->
-                            MoondropLink.setDualConnection(intent.getBooleanExtra("enabled", false))
+                            MoondropLink.setDualConnection(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
+                        MoonPodsAction.SPATIAL_AUDIO_SELECT ->
+                            MoondropLink.setSpatial(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
+                        MoonPodsAction.HEAD_TRACKING_SELECT ->
+                            MoondropLink.setHeadTracking(intent.getBooleanExtra(MoonPodsAction.EXTRA_ENABLED, false))
+                        MoonPodsAction.UI_INIT,
+                        MoonPodsAction.REQUEST_CAPABILITIES -> MoondropLink.refreshAll()
+                        MoonPodsAction.REQUEST_BATTERY -> MoondropLink.requestBatteryRefresh()
+                        MoonPodsAction.REQUEST_GESTURE -> Unit
                         MoonPodsAction.ACTION_REFRESH_STATUS -> MoondropLink.refreshAll()
                         MoonPodsAction.ACTION_CONNECT_POD_REQUEST -> {
                             val device = intent.getParcelableExtra("device", BluetoothDevice::class.java)

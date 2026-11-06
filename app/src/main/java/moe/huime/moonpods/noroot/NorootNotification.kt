@@ -27,8 +27,12 @@ object NorootNotification {
     private const val NOTIFICATION_ID = 10005
 
 
+    /** 历史版本用过的通道 ID：升级时删掉，避免设置页里留一条「免 root 状态」。 */
+    private const val LEGACY_CHANNEL_ID = "moonpods_noroot_status"
+
     fun channel(ctx: Context) {
         val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
+        runCatching { nm.deleteNotificationChannel(LEGACY_CHANNEL_ID) }
         if (runCatching { nm.getNotificationChannel(CHANNEL_ID) }.getOrNull() != null) return
         nm.createNotificationChannel(
             NotificationChannel(
