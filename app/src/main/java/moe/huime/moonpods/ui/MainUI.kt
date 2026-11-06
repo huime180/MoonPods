@@ -215,6 +215,7 @@ fun MainUI(
 
     /** 水月雨的命令统一以广播发回协议栈所在的进程（com.android.bluetooth）。 */
     fun moondropSend(action: String, configure: (Intent) -> Unit = {}) {
+        android.util.Log.i("MoonPods-UI", "send $action -> ${moe.huime.moonpods.config.LinkMode.controlTarget(context)}")
         context.sendBroadcast(Intent(action).apply {
             setPackage(moe.huime.moonpods.config.LinkMode.controlTarget(context))
             configure(this)
