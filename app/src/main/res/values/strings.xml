@@ -124,6 +124,8 @@
     <string name="log_level_off">Off</string>
     <string name="log_level_basic">Basic</string>
     <string name="log_level_debug">Debug</string>
+    <string name="focus_notification">Focus notification</string>
+    <string name="focus_notification_summary">Create the earphone notification; turn off to hide it completely</string>
     <string name="hide_desktop_icon">Hide Desktop Icon</string>
     <string name="hide_desktop_icon_summary">Hide the launcher icon; open from module manager after hiding</string>
     <string name="island_mode">Super Island</string>

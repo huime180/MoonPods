@@ -125,6 +125,8 @@
     <string name="log_level_off">关闭</string>
     <string name="log_level_basic">基础</string>
     <string name="log_level_debug">调试</string>
+    <string name="focus_notification">焦点通知</string>
+    <string name="focus_notification_summary">创建耳机通知；关闭后完全不显示</string>
     <string name="hide_desktop_icon">隐藏桌面图标</string>
     <string name="hide_desktop_icon_summary">隐藏启动器图标；隐藏后请从模块管理器打开</string>
     <string name="island_mode">超级岛</string>

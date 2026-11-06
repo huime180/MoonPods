@@ -188,6 +188,7 @@ fun MainUI(
     val prefs = remember { context.getSharedPreferences(ConfigManager.PREFS_NAME, Context.MODE_PRIVATE) }
     val appConfig = remember { ConfigManager.refreshFromPrefs(prefs) }
     val autoGameMode = remember { mutableStateOf(appConfig.autoGameMode) }
+    val focusNotification = remember { mutableStateOf(appConfig.focusNotification) }
     val milinkCardFeatures = remember { mutableStateOf(appConfig.milinkCardFeatures) }
     val notificationClickAction = remember { mutableStateOf(appConfig.notificationClickAction) }
     val moreClickAction = remember { mutableStateOf(appConfig.moreClickAction) }
@@ -928,6 +929,14 @@ fun MainUI(
 
     // OPPO 专属设置二级页的写入回调：写盘 + 跨进程通知。
     // 提成局部 val 而不是内联进 entryProvider，是为了让「设置项怎么落盘」只有一处实现。
+    val handleFocusNotificationChange: (Boolean) -> Unit = { enabled ->
+        focusNotification.value = enabled
+        ConfigManager.updateFocusNotification(prefs, xposedService, enabled)
+        listOf("com.android.bluetooth", "com.xiaomi.bluetooth", "com.milink.service").forEach { pkg ->
+            broadcastConfigChanged(context, pkg)
+        }
+    }
+
     val handleAutoGameModeChange: (Boolean) -> Unit = { enabled ->
         autoGameMode.value = enabled
         ConfigManager.updateAutoGameMode(prefs, xposedService, enabled)
@@ -996,6 +1005,8 @@ fun MainUI(
                 onDeviceDisconnect = { onDeviceDisconnect(it) },
                 onDismissConnectError = { showConnectErrorDialog = false },
                 desktopIconHidden = desktopIconHidden,
+                focusNotification = focusNotification,
+                onFocusNotificationChange = handleFocusNotificationChange,
                 onDesktopIconHiddenChange = {
                     desktopIconHidden.value = it
                     setLauncherIconHidden(context, it)
