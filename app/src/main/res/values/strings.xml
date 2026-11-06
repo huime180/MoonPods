@@ -117,6 +117,7 @@
     <string name="log_level_off">Off</string>
     <string name="log_level_basic">Basic</string>
     <string name="log_level_debug">Debug</string>
+    <string name="noroot_channel_name">Earbuds status</string>
     <string name="work_mode">Work mode</string>\n    <string name="work_mode_summary">Root: hook MIUI system apps for a native-like experience\nNo root: the app connects the earbuds itself (own notification)</string>\n    <string name="work_mode_root">Root (hook)</string>\n    <string name="work_mode_noroot">No root</string>\n    <string name="focus_notification">Focus notification</string>
     <string name="focus_notification_summary">Create the earphone notification; turn off to hide it completely</string>
     <string name="hide_desktop_icon">Hide Desktop Icon</string>

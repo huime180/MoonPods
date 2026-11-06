@@ -118,6 +118,7 @@
     <string name="log_level_off">关闭</string>
     <string name="log_level_basic">基础</string>
     <string name="log_level_debug">调试</string>
+    <string name="noroot_channel_name">耳机状态</string>
     <string name="work_mode">工作模式</string>\n    <string name="work_mode_summary">Root：hook 小米系统应用，复刻原生耳机体验\n免 root：应用自己连耳机（自带通知）</string>\n    <string name="work_mode_root">Root（hook）</string>\n    <string name="work_mode_noroot">免 root</string>\n    <string name="focus_notification">焦点通知</string>
     <string name="focus_notification_summary">创建耳机通知；关闭后完全不显示</string>
     <string name="hide_desktop_icon">隐藏桌面图标</string>

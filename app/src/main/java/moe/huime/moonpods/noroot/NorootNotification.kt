@@ -26,7 +26,7 @@ import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 object NorootNotification {
 
     private const val TAG = "MoonPods-NorootNotify"
-    private const val CHANNEL_ID = "moonpods_noroot_status"
+    private const val CHANNEL_ID = "moonpods_device_status"
     private const val NOTIFICATION_ID = 10005
 
     fun channel(ctx: Context) {
@@ -36,7 +36,7 @@ object NorootNotification {
         nm.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
-                "MoonPods 免 root 状态",
+                ctx.getString(R.string.noroot_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
                 setShowBadge(false)
@@ -67,7 +67,7 @@ object NorootNotification {
         )
         val notification = Notification.Builder(ctx, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_anc)
-            .setContentTitle(snap.deviceName.ifBlank { snap.modelName.ifBlank { "MoonPods" } })
+            .setContentTitle(snap.deviceName.ifBlank { snap.modelName.ifBlank { "MOONDROP" } })
             .setContentText(text)
             .setContentIntent(openIntent)
             .setOngoing(true)

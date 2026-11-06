@@ -40,6 +40,15 @@ object NorootBridge : PodListener {
             MoondropLink.init(context.applicationContext, this)
         }
         registerControlReceiver(context.applicationContext)
+        // 通道先建出来（Android 13+ 没通道连设置页都看不到开关），已连接则立刻补一条状态
+        NorootNotification.channel(context.applicationContext)
+        val snap = runCatching {
+            if (MoondropLink.isInitialized()) MoondropLink.snapshot() else null
+        }.getOrNull()
+        if (snap?.connected == true) {
+            _snapshot.value = snap
+            broadcastState(snap)
+        }
     }
 
     fun connect(context: Context, device: BluetoothDevice) {
