@@ -550,7 +550,28 @@ object MoondropController {
 
     // 连接
 
+    /** 每个会话只尝试一次 RFCOMM 回落（避免失败机型来回重连）。 */
+    private var rfcommFallbackTried = false
+
+    /**
+     * GATT **连接失败**（不只是“服务发现成功但没 GAIA 服务”）时也回落到 RFCOMM/SPP。
+     *
+     * 空清单/未收录型号走 FALLBACK（BLE 优先），而像布丁这种双模设备在 BLE 上直接回
+     * status=147（GATT_ERROR）。原始实现只在 onServicesDiscovered 里回落，这条路径根本
+     * 走不到 —— 表现就是“云端目录能识别机型，但一直连不上、电量永远 -1”。
+     */
+    private fun maybeFallbackToRfcomm(status: Int, target: BluetoothDevice?) {
+        if (rfcommFallbackTried || useRfcomm || target == null) return
+        if (model.transports.none { it == PodTransport.RFCOMM_GAIA }) return
+        rfcommFallbackTried = true
+        useRfcomm = true
+        Log.i(TAG, "GATT 失败(status=$status)，回落到 RFCOMM/SPP: ${target.address}")
+        scope.launch { connectRfcomm(target) }
+    }
+
     fun connect(btDevice: BluetoothDevice, preferRfcomm: Boolean = false) {
+        // 新会话：重置回落标记
+        rfcommFallbackTried = false
         // 官方云端目录：本进程只拉一次（24h 缓存）；失败不影响连接与控制
         scope.launch { runCatching { MoondropCatalog.refresh() } }
         if (connected && device?.address == btDevice.address) return
@@ -601,7 +622,9 @@ object MoondropController {
                 g.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.d(TAG, "GATT disconnected status=$status")
+                val gone = device ?: g.device
                 if (connected) disconnectInternal(notify = true)
+                maybeFallbackToRfcomm(status, gone)
             }
         }
 
