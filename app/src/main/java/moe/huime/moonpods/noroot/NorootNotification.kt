@@ -166,6 +166,7 @@ object NorootNotification {
                     disconnectLabel = context.getString(R.string.notification_disconnect),
                 )
             }.getOrNull()
+            Log.i(TAG, "focus extras: ${if (focusExtras == null) "none (plain notification)" else "applied"}")
             val builder = android.app.Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_anc)
                 .setContentTitle(title)
@@ -184,16 +185,15 @@ object NorootNotification {
 
     /** 历史版本留下的通道：删除所有与本通知同名但 id 不同的通道，避免设置页出现两条同名项。 */
     private fun purgeLegacyChannels(context: Context, nm: android.app.NotificationManager) {
-        val label = context.getString(R.string.notification_channel_status)
+        // 本应用只应存在一个通知通道：除当前 id 外全部删除。
+        // （历史 id 反复改过，按名字判断会漏 —— 直接按「非当前 id」清理最可靠）
         runCatching {
-            nm.notificationChannels.forEach { channel ->
-                if (channel.id != CHANNEL_ID && channel.name.toString() == label) {
+            nm.notificationChannels.orEmpty().forEach { channel ->
+                if (channel.id != CHANNEL_ID) {
                     nm.deleteNotificationChannel(channel.id)
                 }
             }
-            listOf("moonpods_noroot_status", "moonpods_device_status", "hyperpods_moondrop_island")
-                .forEach { nm.deleteNotificationChannel(it) }
-        }
+        }.onFailure { Log.w(TAG, "purge channels failed", it) }
     }
 
     /** 兼容 bridge 的调用名。 */
