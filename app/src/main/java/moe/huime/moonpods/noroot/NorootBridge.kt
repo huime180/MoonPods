@@ -52,8 +52,6 @@ object NorootBridge : PodListener {
         }.getOrNull()
         if (snap?.connected == true) {
             _snapshot.value = snap
-            // 有会话就拉起保活服务：应用被划掉后仍能继续控制耳机
-            runCatching { NorootKeepAliveService.start(context.applicationContext) }
             if (moe.huime.moonpods.config.ConfigManager.focusNotification()) {
                 broadcastState(snap)
             }
@@ -117,7 +115,6 @@ object NorootBridge : PodListener {
      */
     /** 只取消模块接管，不碰系统蓝牙连接。 */
     fun disconnect(@Suppress("UNUSED_PARAMETER") disconnectBluetooth: Boolean = false) {
-        NorootKeepAliveService.stop(appContext ?: return)
         if (MoondropLink.isInitialized()) MoondropLink.disconnect()
         // 立刻通知 UI：否则通知撤了、页面还显示已连接（点进去是一台空耳机）
         _snapshot.value = PodSnapshot(connected = false)
