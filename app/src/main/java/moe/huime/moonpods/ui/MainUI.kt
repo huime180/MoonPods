@@ -338,9 +338,10 @@ fun MainUI(
         }
     }
 
-    // 兜底：模块报告已连接时，清掉「正在连接」标记（广播丢失/进程重启也不会一直转圈）
-    LaunchedEffect(hookConnected.value) {
-        if (hookConnected.value) connectingDeviceAddress = null
+    // 兜底：任一链路报告已连接时，清掉「正在连接」标记
+    //（原来只看 hookConnected，免 root 模式下永远为 false，于是连上了还在转圈）
+    LaunchedEffect(hookConnected.value, moondropConnected.value) {
+        if (hookConnected.value || moondropConnected.value) connectingDeviceAddress = null
     }
 
     LaunchedEffect(pendingOpenEarphonesAfterPickerLoaded, connectingDeviceAddress, hookConnected.value) {
