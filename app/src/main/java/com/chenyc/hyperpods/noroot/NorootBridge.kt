@@ -14,7 +14,8 @@ object NorootBridge {
     private const val TAG = "HyperPods-Noroot"
 
     fun setEnabled(context: Context, enabled: Boolean) {
-        Log.i(TAG, "noroot link enabled=$enabled (implementation not wired yet)")
+        Log.i(TAG, "noroot link enabled=$enabled")
+        if (!enabled) NorootLink.disconnect()
     }
 
     fun init(context: Context) {
