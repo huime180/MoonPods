@@ -46,6 +46,46 @@ object CapabilityCache {
         }.onFailure { Log.w(TAG, "load failed for $modelKey", it) }.getOrNull()
     }
 
+    /** 免 root 侧的等价类型（两处类型不同，缓存格式统一，做一次映射）。 */
+    fun loadPod(modelKey: String?): moe.huime.moonpods.noroot.PodCapabilities? =
+        load(modelKey)?.let { c ->
+            moe.huime.moonpods.noroot.PodCapabilities(
+                features = c.features,
+                ancPath = c.ancPath,
+                batteryTypes = c.batteryTypes,
+                hasGain = c.hasGain,
+                hasLed = c.hasLed,
+                hasSpatial = c.hasSpatial,
+                hasHeadTracking = c.hasHeadTracking,
+                hasPromptTone = c.hasPromptTone,
+                hasPromptVolume = c.hasPromptVolume,
+                hasLhdc = c.hasLhdc,
+                hasDualConnection = c.hasDualConnection,
+                hasGestures = c.hasGestures,
+            )
+        }
+
+    fun savePod(modelKey: String?, caps: moe.huime.moonpods.noroot.PodCapabilities) {
+        save(
+            modelKey,
+            MoondropCapabilities(
+                features = caps.features,
+                ancPath = caps.ancPath,
+                batteryTypes = caps.batteryTypes,
+                hasGain = caps.hasGain,
+                hasLed = caps.hasLed,
+                hasSpatial = caps.hasSpatial,
+                hasHeadTracking = caps.hasHeadTracking,
+                hasPromptTone = caps.hasPromptTone,
+                hasPromptVolume = caps.hasPromptVolume,
+                hasLhdc = caps.hasLhdc,
+                hasDualConnection = caps.hasDualConnection,
+                hasGestures = caps.hasGestures,
+                probed = true,
+            ),
+        )
+    }
+
     fun save(modelKey: String?, caps: MoondropCapabilities) {
         if (modelKey.isNullOrBlank() || !caps.probed) return
         runCatching {
