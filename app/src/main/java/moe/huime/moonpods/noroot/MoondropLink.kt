@@ -49,7 +49,6 @@ import moe.huime.moonpods.noroot.BATTERY_UNKNOWN
 import moe.huime.moonpods.noroot.BatteryCodec
 import moe.huime.moonpods.noroot.BatteryState
 import moe.huime.moonpods.noroot.Gaia
-import moe.huime.moonpods.noroot.MoondropFramer
 import moe.huime.moonpods.noroot.MoondropModel
 import moe.huime.moonpods.noroot.MoondropModels
 import moe.huime.moonpods.noroot.MoondropCatalog
