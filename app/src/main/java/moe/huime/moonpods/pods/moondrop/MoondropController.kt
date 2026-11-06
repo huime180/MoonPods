@@ -177,6 +177,9 @@ object MoondropController {
      * 与 [RfcommController.handleUIEvent] 同一份契约：调用方只发广播，本控制器负责解释。
      * 认不出的 action 直接忽略——同一个进程里还跑着 OPPO 那条线的广播。
      */
+    /** 当前档位表的 id 列表（供系统侧 bridge 把 MIUI 三态映射成档位下标）。 */
+    fun snapshotAncIds(): List<String> = ancModes.map { it.id }
+
     fun handleUIEvent(intent: Intent, receiverContext: Context? = null) {
         (receiverContext ?: appContext)?.let { init(it) }
         when (intent.action) {
