@@ -21,6 +21,8 @@ class NorootConnectReceiver : BroadcastReceiver() {
             intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
         }.getOrNull() ?: return
         if (state != BluetoothProfile.STATE_CONNECTED) return
+        // Root 模式下由被注入的蓝牙进程接管，这里不能抢
+        if (moe.huime.moonpods.config.ConfigManager.workMode() != moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) return
         // 只接管识别得出的水月雨机型；认不出来就不碰
         val name = runCatching { device.name ?: device.alias }.getOrNull()
         if (NorootBridge.matchModel(name) == null) return

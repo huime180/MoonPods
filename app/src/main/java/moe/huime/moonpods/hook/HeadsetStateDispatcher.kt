@@ -66,6 +66,10 @@ object HeadsetStateDispatcher : HookContext() {
             handler.post {
                 val context = instance as ContextWrapper
                 registerAppRequestReceiver(context)
+                // 免 root 模式：链路由应用进程自己建，这里绝不接管（否则两边抢同一条 SPP/GATT）
+                if (moe.huime.moonpods.config.ConfigManager.workMode() ==
+                    moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT
+                ) return@post
                 // 认不出来的设备什么都不做（不是本模块支持的耳机时，绝不能去动系统的蓝牙状态）
                 if (resolveBrand(device) == null) {
                     Log.d(TAG, "A2DP state $fromState -> $currState device=${device.address} 非水月雨，忽略")

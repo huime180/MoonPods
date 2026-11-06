@@ -5,11 +5,20 @@ import android.util.Log
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
 import java.util.concurrent.CopyOnWriteArraySet
+import moe.huime.moonpods.config.ConfigManager
 
 class MoonPodsApp : Application(), XposedServiceHelper.OnServiceListener {
     override fun onCreate() {
         super.onCreate()
         XposedServiceHelper.registerListener(this)
+        // 免 root 模式：应用进程自己直连耳机。这里只初始化链路与广播桥，不起任何服务。
+        runCatching {
+            val prefs = getSharedPreferences(ConfigManager.PREFS_NAME, MODE_PRIVATE)
+            ConfigManager.init(prefs)
+            if (ConfigManager.workMode() == ConfigManager.WORK_MODE_NOROOT) {
+                moe.huime.moonpods.noroot.NorootBridge.init(this)
+            }
+        }
     }
 
     override fun onServiceBind(service: XposedService) {

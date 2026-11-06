@@ -30,6 +30,9 @@ object MoonPodsAction {
     const val ACTION_DUAL_DEVICE_CONNECTION_SET = "chen.action.hyperpods.dual_device_connection_set"
     const val ACTION_PODS_DUAL_DEVICE_CONNECTION_CHANGED = "chen.action.hyperpods.pods_dual_device_connection_changed"
     const val ACTION_CYCLE_ANC = "chen.action.hyperpods.cycle_anc"
+    /** 免 root 模式下通知栏「断开连接」按钮的落点（应用内广播） */
+    const val NOROOT_DISCONNECT = "chen.action.hyperpods.noroot_disconnect"
+
     const val ACTION_AUTO_GAME_MODE_CHANGED = "chen.action.hyperpods.auto_game_mode_changed"
     const val ACTION_RFCOMM_LOG_CONNECT = "chen.action.hyperpods.rfcomm_log_connect"
     const val ACTION_RFCOMM_LOG_DISCONNECT = "chen.action.hyperpods.rfcomm_log_disconnect"

@@ -1,57 +1,170 @@
 package moe.huime.moonpods.noroot
 
 import android.bluetooth.BluetoothDevice
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import moe.huime.moonpods.BuildConfig
+import moe.huime.moonpods.utils.miuiStrongToast.data.BatteryParams
+import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
+import moe.huime.moonpods.utils.miuiStrongToast.data.PodParams
 
 /**
- * 免 root 直连桥。
+ * 免 root 直连桥（应用进程内）。
  *
- * 与「Hook 模式」互补：Hook 模式由被注入的蓝牙进程里的 `pods/moondrop/MoondropController`
- * 接管耳机；免 root 模式由**应用进程自己**建 GAIA 链路（BLE / RFCOMM），不需要 LSPosed、
- * 不需要任何系统权限。两者共用同一套协议语义，差别只在“谁持有蓝牙连接”。
+ * Root 模式由被注入的蓝牙进程里的 `pods/moondrop/MoondropController` 接管耳机；
+ * 免 root 模式由**应用进程自己**建 GAIA 链路，不需要 LSPosed。
  *
- * 这里刻意**不起前台服务**：链路生命周期跟应用进程一致，进程被回收就断开，
- * 由系统 A2DP 广播（[NorootConnectReceiver]）在耳机重新连上时再把进程拉起来。
+ * 关键点：对 UI **保持与 Root 模式完全相同的广播契约** —— 控件复用同一套，
+ * 只是这里的控制器在应用进程、事件也用广播回灌给自己（setPackage(APPLICATION_ID)）。
  */
 object NorootBridge : PodListener {
 
+    private const val TAG = "MoonPods-Noroot"
+    private var appContext: Context? = null
+    private var receiverRegistered = false
+
     private val _snapshot = MutableStateFlow<PodSnapshot?>(null)
-    /** 当前耳机快照（免 root 模式下由本进程维护） */
     val snapshot: StateFlow<PodSnapshot?> = _snapshot
 
     private val _lastEvent = MutableStateFlow<PodEvent?>(null)
-    /** 最近一次状态事件（UI / 通知层按需消费） */
     val lastEvent: StateFlow<PodEvent?> = _lastEvent
 
     fun init(context: Context) {
-        if (MoondropLink.isInitialized()) return
-        MoondropLink.init(context.applicationContext, this)
+        appContext = context.applicationContext
+        if (!MoondropLink.isInitialized()) {
+            MoondropLink.init(context.applicationContext, this)
+        }
+        registerControlReceiver(context.applicationContext)
     }
 
-    /** 免 root 连接：先 init 再建链，调用方可以是广播接收器或 UI。 */
     fun connect(context: Context, device: BluetoothDevice) {
         init(context)
         MoondropLink.connect(device)
     }
 
     fun disconnect() {
-        if (!MoondropLink.isInitialized()) return
-        MoondropLink.disconnect()
+        if (MoondropLink.isInitialized()) MoondropLink.disconnect()
     }
 
     fun isInitialized(): Boolean = MoondropLink.isInitialized()
 
-    /** 这台设备是不是水月雨（走官方云端目录识别）。 */
     fun matchModel(name: String?) = MoondropLink.sniffModel(name)
+
+    /**
+     * 收 UI/通知发来的控制命令，翻译成 GAIA 调用。
+     *
+     * 只在本进程注册：Root 模式里这些 action 是发给 com.android.bluetooth 的，
+     * 免 root 模式里同一个 action 直接落到这里，UI 不需要区分模式。
+     */
+    private fun registerControlReceiver(ctx: Context) {
+        if (receiverRegistered) return
+        receiverRegistered = true
+        val filter = IntentFilter().apply {
+            listOf(
+                MoonPodsAction.ANC_SELECT,
+                MoonPodsAction.GAIN_SELECT,
+                MoonPodsAction.LED_SELECT,
+                MoonPodsAction.PROMPT_TONE_SELECT,
+                MoonPodsAction.PROMPT_VOLUME_SELECT,
+                MoonPodsAction.LHDC_SELECT,
+                MoonPodsAction.DUAL_CONNECTION_SELECT,
+                MoonPodsAction.GESTURE_SELECT,
+                MoonPodsAction.ACTION_REFRESH_STATUS,
+                MoonPodsAction.ACTION_CONNECT_POD_REQUEST,
+                MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST,
+                MoonPodsAction.NOROOT_DISCONNECT,
+            ).forEach { addAction(it) }
+        }
+        ctx.registerReceiver(object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                val action = intent?.action ?: return
+                runCatching {
+                    when (action) {
+                        MoonPodsAction.ANC_SELECT ->
+                            MoondropLink.setAnc(intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, 0))
+                        MoonPodsAction.GAIN_SELECT ->
+                            MoondropLink.setGain(intent.getIntExtra(MoonPodsAction.EXTRA_STATUS, 0))
+                        MoonPodsAction.LED_SELECT ->
+                            MoondropLink.setLed(intent.getBooleanExtra("enabled", false))
+                        MoonPodsAction.PROMPT_TONE_SELECT ->
+                            MoondropLink.setPromptTone(intent.getBooleanExtra("enabled", false))
+                        MoonPodsAction.PROMPT_VOLUME_SELECT ->
+                            MoondropLink.setPromptVolumeRaw(intent.getIntExtra("volume", 0))
+                        MoonPodsAction.LHDC_SELECT ->
+                            MoondropLink.setLhdc(intent.getBooleanExtra("enabled", false))
+                        MoonPodsAction.DUAL_CONNECTION_SELECT ->
+                            MoondropLink.setDualConnection(intent.getBooleanExtra("enabled", false))
+                        MoonPodsAction.ACTION_REFRESH_STATUS -> MoondropLink.refreshAll()
+                        MoonPodsAction.ACTION_CONNECT_POD_REQUEST -> {
+                            val device = intent.getParcelableExtra("device", BluetoothDevice::class.java)
+                            if (device != null) MoondropLink.connect(device)
+                        }
+                        MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST,
+                        MoonPodsAction.NOROOT_DISCONNECT -> MoondropLink.disconnect()
+                    }
+                }.onFailure { Log.w(TAG, "control $action failed", it) }
+            }
+        }, filter, Context.RECEIVER_EXPORTED)
+    }
 
     override fun onEvent(event: PodEvent) {
         _lastEvent.value = event
-        _snapshot.value = when (event) {
+        val snap = when (event) {
             is PodEvent.Connected -> event.snapshot
             PodEvent.Disconnected -> null
             else -> runCatching { MoondropLink.snapshot() }.getOrNull()
         }
+        _snapshot.value = snap
+        snap?.let { broadcastState(it) ?: return }
+        if (snap == null) broadcastDisconnected()
+    }
+
+    /** 把快照翻译成与 Root 模式一致的广播。 */
+    private fun broadcastState(snap: PodSnapshot) {
+        val ctx = appContext ?: return
+        fun send(intent: Intent) {
+            intent.setPackage(BuildConfig.APPLICATION_ID)
+            intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+            ctx.sendBroadcast(intent)
+        }
+        send(Intent(MoonPodsAction.ACTION_PODS_CONNECTED).apply {
+            putExtra(MoonPodsAction.EXTRA_MAC, snap.deviceAddress)
+            putExtra(MoonPodsAction.EXTRA_DEVICE_NAME, snap.deviceName)
+            putExtra("address", snap.deviceAddress)
+            putExtra("device_name", snap.deviceName)
+        })
+        send(Intent(MoonPodsAction.ACTION_PODS_BATTERY_CHANGED).apply {
+            putExtra("address", snap.deviceAddress)
+            putExtra("status", BatteryParams(
+                left = PodParams(snap.battery.left, snap.battery.leftCharging, true),
+                right = PodParams(snap.battery.right, snap.battery.rightCharging, true),
+                case = PodParams(snap.battery.case, snap.battery.caseCharging, snap.battery.caseKnown),
+            ))
+        })
+        if (snap.ancIndex >= 0 && snap.ancModes.isNotEmpty()) {
+            send(Intent(MoonPodsAction.ACTION_PODS_ANC_CHANGED).apply {
+                putExtra("address", snap.deviceAddress)
+                putExtra(MoonPodsAction.EXTRA_STATUS, snap.ancIndex)
+                putStringArrayListExtra(
+                    MoonPodsAction.EXTRA_ANC_IDS,
+                    ArrayList(snap.ancModes.map { it.id }),
+                )
+            })
+        }
+        NorootNotification.post(ctx, snap)
+    }
+
+    private fun broadcastDisconnected() {
+        val ctx = appContext ?: return
+        ctx.sendBroadcast(Intent(MoonPodsAction.ACTION_PODS_DISCONNECTED).apply {
+            setPackage(BuildConfig.APPLICATION_ID)
+            addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+        })
+        NorootNotification.cancel(ctx)
     }
 }

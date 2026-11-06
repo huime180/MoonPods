@@ -32,6 +32,8 @@ fun SettingsPage(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     desktopIconHidden: MutableState<Boolean> = mutableStateOf(false),
     onDesktopIconHiddenChange: (Boolean) -> Unit = {},
+    workMode: MutableState<Int> = mutableStateOf(ConfigManager.WORK_MODE_ROOT),
+    onWorkModeChange: (Int) -> Unit = {},
     focusNotification: MutableState<Boolean> = mutableStateOf(true),
     onFocusNotificationChange: (Boolean) -> Unit = {},
     logLevel: MutableState<Int> = mutableStateOf(ConfigManager.LOG_LEVEL_BASIC),
@@ -49,6 +51,11 @@ fun SettingsPage(
     onOpenTheme: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
 ) {
+    val workModeOptions = listOf(
+        stringResource(R.string.work_mode_root),
+        stringResource(R.string.work_mode_noroot),
+    )
+    val workModeValues = listOf(ConfigManager.WORK_MODE_ROOT, ConfigManager.WORK_MODE_NOROOT)
     val languageOptions = listOf(
         stringResource(R.string.language_system),
         stringResource(R.string.language_chinese),
@@ -156,6 +163,13 @@ fun SettingsPage(
                     summary = stringResource(R.string.hide_desktop_icon_summary),
                     checked = desktopIconHidden.value,
                     onCheckedChange = { onDesktopIconHiddenChange(it) }
+                )
+                OverlayDropdownPreference(
+                    title = stringResource(R.string.work_mode),
+                    summary = stringResource(R.string.work_mode_summary),
+                    items = workModeOptions,
+                    selectedIndex = workModeValues.indexOf(workMode.value).coerceAtLeast(0),
+                    onSelectedIndexChange = { onWorkModeChange(workModeValues[it]) }
                 )
                 SwitchPreference(
                     title = stringResource(R.string.focus_notification),

@@ -187,6 +187,7 @@ fun MainUI(
     val appConfig = remember { ConfigManager.refreshFromPrefs(prefs) }
     val autoGameMode = remember { mutableStateOf(appConfig.autoGameMode) }
     val focusNotification = remember { mutableStateOf(appConfig.focusNotification) }
+    val workMode = remember { mutableStateOf(appConfig.workMode) }
     val milinkCardFeatures = remember { mutableStateOf(appConfig.milinkCardFeatures) }
     val notificationClickAction = remember { mutableStateOf(appConfig.notificationClickAction) }
     val moreClickAction = remember { mutableStateOf(appConfig.moreClickAction) }
@@ -697,11 +698,16 @@ fun MainUI(
         showDevicePicker = true
         selectedTab = MainTab.Earphones
         hookConnectionState = "connecting"
-        Intent(MoonPodsAction.ACTION_CONNECT_POD_REQUEST).apply {
-            putExtra("device", device)
-            setPackage("com.android.bluetooth")
-            addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
-            context.sendBroadcast(this)
+        if (ConfigManager.workMode() == ConfigManager.WORK_MODE_NOROOT) {
+            // 免 root：应用进程自己建链，不走蓝牙进程
+            moe.huime.moonpods.noroot.NorootBridge.connect(context, device)
+        } else {
+            Intent(MoonPodsAction.ACTION_CONNECT_POD_REQUEST).apply {
+                putExtra("device", device)
+                setPackage("com.android.bluetooth")
+                addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                context.sendBroadcast(this)
+            }
         }
     }
 
@@ -914,6 +920,14 @@ fun MainUI(
 
     // OPPO 专属设置二级页的写入回调：写盘 + 跨进程通知。
     // 提成局部 val 而不是内联进 entryProvider，是为了让「设置项怎么落盘」只有一处实现。
+    val handleWorkModeChange: (Int) -> Unit = { mode ->
+        workMode.value = mode
+        ConfigManager.updateWorkMode(prefs, xposedService, mode)
+        listOf("com.android.bluetooth", "com.xiaomi.bluetooth", "com.milink.service").forEach { pkg ->
+            broadcastConfigChanged(context, pkg)
+        }
+    }
+
     val handleFocusNotificationChange: (Boolean) -> Unit = { enabled ->
         focusNotification.value = enabled
         ConfigManager.updateFocusNotification(prefs, xposedService, enabled)
@@ -974,6 +988,8 @@ fun MainUI(
                 onDeviceDisconnect = { onDeviceDisconnect(it) },
                 onDismissConnectError = { showConnectErrorDialog = false },
                 desktopIconHidden = desktopIconHidden,
+                workMode = workMode,
+                onWorkModeChange = handleWorkModeChange,
                 focusNotification = focusNotification,
                 onFocusNotificationChange = handleFocusNotificationChange,
                 onDesktopIconHiddenChange = {
