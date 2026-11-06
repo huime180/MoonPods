@@ -137,6 +137,10 @@ object HeadsetStateDispatcher : HookContext() {
                         val device = intent.getParcelableExtra("device", BluetoothDevice::class.java) ?: return
                         if (resolveBrand(device) == null) return
                         Log.d(TAG, "connect request from app device=${device.address}")
+                        // 这条请求来自应用侧（Root 模式）：显式锁定模式，避免 remote prefs
+                        // 滞后读到「免 root」而让控制器直接 return —— 那正是断开后重连不接管的原因。
+                        moe.huime.moonpods.pods.WorkModeBridge.override =
+                            moe.huime.moonpods.config.ConfigManager.WORK_MODE_ROOT
                         MoondropController.init(context)
                         MoondropController.connect(device)
                     }
