@@ -11,6 +11,39 @@ class MoonPodsApp : Application(), XposedServiceHelper.OnServiceListener {
     override fun onCreate() {
         super.onCreate()
         XposedServiceHelper.registerListener(this)
+        // A2DP 自动接管：耳机连上就接管。两种模式共用，且不依赖 hook 是否安装成功
+        //（进程重启、作用域未刷新时 hook 可能缺席，这里是兜底入口）。
+        runCatching {
+            registerReceiver(object : android.content.BroadcastReceiver() {
+                override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+                    if (intent?.action != android.bluetooth.BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED) return
+                    val state = intent.getIntExtra(android.bluetooth.BluetoothProfile.EXTRA_STATE, -1)
+                    if (state != android.bluetooth.BluetoothProfile.STATE_CONNECTED) return
+                    val device = runCatching {
+                        intent.getParcelableExtra(
+                            android.bluetooth.BluetoothDevice.EXTRA_DEVICE,
+                            android.bluetooth.BluetoothDevice::class.java,
+                        )
+                    }.getOrNull() ?: return
+                    val name = runCatching { device.name ?: device.alias }.getOrNull()
+                    if (moe.huime.moonpods.pods.PodCatalog.brandOf(name, device.address) == null) return
+                    if (ConfigManager.workMode() == ConfigManager.WORK_MODE_NOROOT) {
+                        moe.huime.moonpods.noroot.NorootBridge.connect(this@MoonPodsApp, device)
+                    } else {
+                        sendBroadcast(android.content.Intent(
+                            moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction.ACTION_CONNECT_POD_REQUEST
+                        ).apply {
+                            setPackage("com.android.bluetooth")
+                            putExtra("device", device)
+                            addFlags(android.content.Intent.FLAG_RECEIVER_FOREGROUND)
+                        })
+                    }
+                }
+            }, android.content.IntentFilter(
+                android.bluetooth.BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED
+            ), android.content.Context.RECEIVER_EXPORTED)
+        }
+
         // 免 root 模式：应用进程自己直连耳机。这里只初始化链路与广播桥，不起任何服务。
         // 被注入进程没有网络权限：它们请求刷新时由应用进程代劳，结果写回共享 prefs
         runCatching {
