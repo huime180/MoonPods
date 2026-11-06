@@ -16,6 +16,13 @@ data class AppConfig(
     val moreClickAction: Int = ConfigManager.MORE_CLICK_MODULE,
     val milinkCardFeatures: Set<Int> = ConfigManager.DEFAULT_MILINK_CARD_FEATURES,
     val autoGameMode: Boolean = false,
+    /**
+     * 免 root 独立链路的开关。
+     *
+     * 它只决定「应用进程自己要直连耳机」这条链路是否启用，**不影响** Root 侧
+     * （LSPosed 注入系统蓝牙进程的那条链路）：两者互不依赖，也不互斥。
+     */
+    val norootEnabled: Boolean = false,
 )
 
 object ConfigManager {
@@ -30,6 +37,7 @@ object ConfigManager {
     const val PREF_KEY_MORE_CLICK_ACTION = "more_click_action"
     const val PREF_KEY_MILINK_CARD_FEATURES = "milink_card_features"
     const val PREF_KEY_AUTO_GAME_MODE = "auto_game_mode"
+    const val PREF_KEY_NOROOT_ENABLED = "noroot_enabled"
     const val DEFAULT_FAKE_DEVICE_ID = "01010607"
     const val LOG_LEVEL_OFF = 0
     const val LOG_LEVEL_BASIC = 1
@@ -102,6 +110,12 @@ object ConfigManager {
     fun moreClickAction(): Int = current().moreClickAction.coerceIn(MORE_CLICK_HEYTAP, MORE_CLICK_MODULE)
 
     fun milinkCardFeatures(): Set<Int> = current().milinkCardFeatures.normalizedMilinkCardFeatures()
+
+    fun norootEnabled(): Boolean = current().norootEnabled
+
+    fun updateNorootEnabled(prefs: SharedPreferences, service: XposedService?, enabled: Boolean) {
+        save(prefs, service, current().copy(norootEnabled = enabled))
+    }
 
     fun autoGameMode(): Boolean = current().autoGameMode
 
@@ -181,6 +195,7 @@ object ConfigManager {
             .putInt(PREF_KEY_MORE_CLICK_ACTION, config.moreClickAction)
             .putStringSet(PREF_KEY_MILINK_CARD_FEATURES, config.milinkCardFeatures.map(Int::toString).toSet())
             .putBoolean(PREF_KEY_AUTO_GAME_MODE, config.autoGameMode)
+            .putBoolean(PREF_KEY_NOROOT_ENABLED, config.norootEnabled)
             .commit()
     }
 
@@ -194,6 +209,8 @@ object ConfigManager {
         val directMilinkCardFeatures = prefs.getStringSet(PREF_KEY_MILINK_CARD_FEATURES, null)
             ?.mapNotNull(String::toIntOrNull)
             ?.toSet()
+        val directNorootEnabled = prefs.takeIf { it.contains(PREF_KEY_NOROOT_ENABLED) }
+            ?.getBoolean(PREF_KEY_NOROOT_ENABLED, config.norootEnabled) ?: config.norootEnabled
         val directAutoGameMode = prefs.takeIf { it.contains(PREF_KEY_AUTO_GAME_MODE) }
             ?.getBoolean(PREF_KEY_AUTO_GAME_MODE, false)
         val raw = prefs.getString(PREF_KEY_CONFIG_JSON, null)
@@ -212,6 +229,7 @@ object ConfigManager {
                 moreClickAction = directMoreClickAction.takeIf { it != Int.MIN_VALUE } ?: migratedMoreClickAction,
                 milinkCardFeatures = directMilinkCardFeatures ?: config.milinkCardFeatures,
                 autoGameMode = directAutoGameMode ?: config.autoGameMode,
+                norootEnabled = directNorootEnabled,
             ).normalized()
         }
         return config.copy(
