@@ -143,6 +143,8 @@ object HeadsetStateDispatcher : HookContext() {
                             moe.huime.moonpods.config.ConfigManager.WORK_MODE_ROOT
                         MoondropController.init(context)
                         MoondropController.connect(device)
+                        // 先把上一轮缓存的状态重放一次，UI 不必等探测跑完
+                        runCatching { MoondropController.republishNow() }
                     }
                     MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST -> {
                         val device = intent.getParcelableExtra("device", BluetoothDevice::class.java) ?: return
@@ -190,6 +192,8 @@ object HeadsetStateDispatcher : HookContext() {
                     if (state == android.bluetooth.BluetoothProfile.STATE_CONNECTED) {
                         MoondropController.init(context)
                         MoondropController.connect(device)
+                        // 先把上一轮缓存的状态重放一次，UI 不必等探测跑完
+                        runCatching { MoondropController.republishNow() }
                     } else if (state == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED) {
                         MoondropController.disconnect()
                     }

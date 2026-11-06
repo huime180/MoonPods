@@ -253,6 +253,9 @@ object MoondropController {
      * 不依赖有没有变化。手势那条以前踩过同一个坑，当时是用 REQUEST_GESTURE 单独补的；
      * 这里统一补，免得别的项以后又各踩一遍。
      */
+    /** 供 dispatcher 在「耳机已连上」时立刻重放一次缓存状态，让 UI 不必等到探测完成。 */
+    fun republishNow() = republishCachedState()
+
     private fun republishCachedState() {
         Log.i(TAG, "republish cached state: battery=" + batteryState + " gesture=" + (gestureConf != null))
         // 「连接/设备身份」也必须重放：应用进程被强停后重新打开时，它错过的是 PODS_CONNECTED 那一次，
