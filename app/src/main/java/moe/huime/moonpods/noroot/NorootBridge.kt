@@ -52,7 +52,9 @@ object NorootBridge : PodListener {
         }.getOrNull()
         if (snap?.connected == true) {
             _snapshot.value = snap
-            broadcastState(snap)
+            if (moe.huime.moonpods.config.ConfigManager.focusNotification()) {
+                broadcastState(snap)
+            }
         }
     }
 
@@ -135,7 +137,11 @@ object NorootBridge : PodListener {
                             if (snap?.connected == true) {
                                 lastBroadcast = null
                                 broadcastState(snap)
-                                NorootNotification.postSimple(appContext ?: ctx, snap)
+                                if (moe.huime.moonpods.config.ConfigManager.focusNotification()) {
+                                    NorootNotification.postSimple(appContext ?: ctx, snap)
+                                } else {
+                                    NorootNotification.cancel(appContext ?: ctx)
+                                }
                             }
                             MoondropLink.refreshAll()
                         }

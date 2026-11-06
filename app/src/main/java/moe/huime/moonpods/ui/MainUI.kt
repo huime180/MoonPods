@@ -936,7 +936,19 @@ fun MainUI(
         runCatching {
             if (!enabled) {
                 moe.huime.moonpods.noroot.NorootNotification.cancel(context)
-            } else if (ConfigManager.workMode() == ConfigManager.WORK_MODE_NOROOT) {
+                // Root 模式：让小米蓝牙进程撤掉它那条通知
+                context.sendBroadcast(Intent(MoonPodsAction.CANCEL_PODS_NOTIFICATION).apply {
+                    setPackage("com.xiaomi.bluetooth")
+                    addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                })
+            } else {
+                // Root 模式：请求重新发布通知
+                context.sendBroadcast(Intent(MoonPodsAction.UPDATE_PODS_NOTIFICATION).apply {
+                    setPackage("com.xiaomi.bluetooth")
+                    addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                })
+            }
+            if (enabled && ConfigManager.workMode() == ConfigManager.WORK_MODE_NOROOT) {
                 val snap = moe.huime.moonpods.noroot.NorootBridge.snapshot.value
                 if (snap?.connected == true) {
                     moe.huime.moonpods.noroot.NorootNotification.postSimple(context, snap)
