@@ -27,6 +27,16 @@ class MainActivity : ComponentActivity() {
         Thread { runCatching { moe.huime.moonpods.pods.moondrop.MoondropCatalog.refresh() } }.start()
         super.onCreate(savedInstanceState)
 
+        // 免 root 模式的耳机通知由本应用发：Android 13+ 需要运行时权限，打开应用时申请一次
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            runCatching {
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
+            }
+        }
+
         setContent {
             val prefs = remember { getSharedPreferences(ConfigManager.PREFS_NAME, Context.MODE_PRIVATE) }
             val themeMode = remember { mutableStateOf(prefs.getInt("theme_mode", 0)) }
