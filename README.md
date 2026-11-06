@@ -1,98 +1,95 @@
-
 <div align="center">
 
-<img src="https://github.com/user-attachments/assets/e8a3df6b-6e67-485a-ae1c-018ac24e87d4" width="120" height="120" style="border-radius: 24px;" alt="HyperPods"/>
+# MoonPods
 
-# HyperPods
-
-**为 HyperOS 设备提供系统级 OPPO / 水月雨耳机控制**
+**为 HyperOS 设备提供水月雨（MOONDROP）耳机的系统级控制**
 
 [![Platform](https://img.shields.io/badge/Platform-Android-green?style=flat-square&logo=android)](https://android.com)
 [![LSPosed](https://img.shields.io/badge/Framework-LSPosed-blueviolet?style=flat-square)](https://github.com/LSPosed/LSPosed)
-[![HyperOS](https://img.shields.io/badge/ROM-澎湃OS3-orange?style=flat-square)](https://hyperos.mi.com)
-
-**[English](README_EN.md)** | **简体中文**
+[![HyperOS](https://img.shields.io/badge/ROM-澎湃OS-orange?style=flat-square)](https://hyperos.mi.com)
 
 </div>
 
-一个模块同时接管两个厂牌的耳机：**OPPO / 一加**（欢律私有 RFCOMM 协议）与
-**水月雨 MOONDROP**（GAIA 协议）。接入哪一台由品牌判定自动决定，两条线的功能都摆在
-同一个耳机页上，按耳机实际具备的能力显示。
+MoonPods 接管水月雨蓝牙耳机：识别机型、按设备自报能力加载控制项，并提供两种工作模式 ——
+**Root（LSPosed 注入系统蓝牙进程）** 与 **免 root（应用进程直连耳机）**。
 
-两条协议栈都跑在被注入的 `com.android.bluetooth` 进程里；应用侧没有协议客户端，
-只通过广播与蓝牙进程通信。
+同一套协议实现、同一份云端机型目录、同一套 UI，两种模式的差别只在「谁持有蓝牙链路、
+谁负责发通知与弹窗」。
 
-### 耳机功能
+## 两种模式对比
 
-**OPPO / 一加**
+| 能力 | Root（Hook） | 免 root（应用直连） |
+|---|---|---|
+| 蓝牙链路 | `com.android.bluetooth` 进程 | 应用进程 |
+| 机型识别 | 云端目录 + 官方 App 缓存 | 同左 |
+| ANC / 电量 / 增益 / 指示灯 / 提示音 / LHDC / 双设备 / 手势 | ✅ | ✅ |
+| 连接弹窗 | ✅ 模块弹窗 / ✅ 系统弹窗 | ✅ 模块弹窗 / ❌ 系统弹窗 |
+| 超级岛 | ✅ 官方 / ✅ 模块 | ✅ 模块（官方需系统应用发通知） |
+| 焦点通知 | ✅ 小米蓝牙进程发布 | ✅ 应用发布（同款文案与机型图） |
+| 融合设备中心卡片 | ✅ | ❌ |
+| 系统蓝牙设置页适配 | ✅ | ❌ |
+| 连接时自动挂载 | ✅ A2DP 事件 + 已连设备扫描 | ✅ 广播 + ACL 兜底 + 启动自检 |
+| 依赖 | LSPosed，作用域四进程 | 仅运行时权限 |
+| 通知开关 | ✅ 受「焦点通知」控制 | ✅ 受「焦点通知」控制 |
 
-- **降噪控制** — 关闭 / 降噪 / 自适应 / 通透
-- **游戏模式** — 低延迟音频开关，支持连接时自动开启（这是欢律私有的**设备侧**命令，只有 OPPO 线有）
-- **电量显示** — 左耳 / 右耳 / 充电盒
-- 均衡器、空间音频、双设备连接等由型号配置档决定
+**切换模式**会自动完成：断开耳机 → 撤销通知 → 写入配置 → 重启作用域 → 重启应用。
 
-**水月雨 MOONDROP**
+## 功能
 
-- **降噪控制** — 档位表由设备实际能力探测得出（三条 ANC 路径自动选择），不靠型号猜测；
-  主档是 **通透 / 降噪 / 关闭**，降噪子档是 **基本 / 抗风噪 / 自适应**
-- **电量显示** — 三路电量，含「单设备电量」机型的兼容处理
-- **增益 / 指示灯 / 提示音开关与音量**
-- **LHDC 开关** — 与双设备连接互斥，开启时自动关掉另一个并给出提示
-- **双设备连接（一拖二）**
-- **手势控制（TOUCHV2）** — 5 个槽位 × 2 只耳，单独一页
+**耳机控制**
 
-### 澎湃集成
+- 降噪档位：主档 通透 / 降噪 / 关闭，子档 基本 / 抗风噪 / 自适应，按设备能力探测生成
+- 三路电量（含单设备电量机型），离线显示为一条短横线
+- 增益、指示灯、提示音开关与音量
+- LHDC 与双设备连接（互斥处理）
+- 手势控制（TOUCHV2，5 个槽位 × 双耳）
 
-- **超级岛** — 支持官方超级岛或模块内建超级岛
-- **融合设备中心** — 两个厂牌都接管（`hook/milink/`）：OPPO 走系统原生语义，水月雨的档位
-  按家族翻译成系统语义（降噪 / 通透 / 关闭）；在小窗里点档位时，用**水月雨自己的档位下标**
-  下发回蓝牙进程，而不是 OPPO 那套 1/2/3/4 编码
-- **系统蓝牙设置入口** — 耳机页与顶栏可直接跳到 Settings 的设备详情页（与「设置 → 蓝牙 → 点设备」
-  同一张页面）
+**系统集成（Root）**
 
-> 模块**不再注入 `com.android.settings`**：系统蓝牙设置页保持原样，模块只在蓝牙进程与
-> 融合设备中心（`com.milink.service`）里接管耳机。
+- 超级岛（官方模板 / 模块自建）
+- 融合设备中心卡片，档位按水月雨下标回传
+- 系统蓝牙设置页的耳机详情适配
 
-### 模块功能
+**应用**
 
-- **底栏三页** — 模块 / 耳机 / 设置
-- **快捷弹窗** — 点击通知或控制中心耳机卡片，弹出浮窗：标题是**设备名**，内容是电量 + 降噪，
-  下面一组**可折叠的「快捷控制」**（提示音含音量 / LHDC / 双设备连接，按设备能力位出现）
-- **快捷跳转** — 支持快速跳转欢律 / 模块设置 / 系统设置
-- **一键重启作用域** — 不用重启手机
+- 设备页 / 设置页 / 快捷弹窗
+- 通知固定文案：`左 100%`，离线项不显示
+- 机型图（可导入官方渲染图，按单耳/双耳自动切换）
 
-### 系统要求
+## 数据来源
 
-- 小米设备，运行 **HyperOS**（Android 15+）（超级岛仅支持 OS3）
-- **LSPosed** API 版本 >= 101
+1. **云端机型目录**（`products/all`）：型号名、产品 UUID、芯片族 → 决定识别与传输线路；
+2. **官方 App 本地缓存**（`cachedDeviceFunc_<uuid>_<固件版本>`）：该机型的功能清单，
+   由应用进程读取并写入共享缓存，两种模式共用；
+3. **运行时能力探测**：连接后由设备自报 feature 集合，作为最终权威；
+4. **内置实测档案**：布丁、梦回2、太空漫游2、U.C.T.S 的档位与增益语义来自真机实测，
+   不依赖探测（见 `MoondropModelRegistry.calibrationFor`）。
 
-### 使用
+## 安装
 
-1. 安装 APK
-2. 在 LSPosed 中启用模块并勾选作用域，三条：`com.android.bluetooth`、`com.milink.service`、
-   `com.xiaomi.bluetooth`（模块的 `scope.list` 就是这三条，不含 `com.android.settings`）
-3. 用模块右上角一键重启作用域（或重启手机）
-4. 通过蓝牙连接你的耳机
+1. 安装 APK；
+2. Root 模式：LSPosed 启用模块，作用域勾选四个：
+   `com.android.bluetooth`、`com.xiaomi.bluetooth`、`com.milink.service`、`com.android.settings`；
+3. 一键重启作用域（或重启手机）；
+4. 设置里选择工作模式，连接耳机。
 
-> 同时装着其它同类模块（如 PuddingPods、旧的水月雨模块）时，请关掉它们的作用域——
-> 多个模块会抢同一批系统类，导致「改了没反应」这类问题。
+免 root 模式只需授予：蓝牙连接/扫描（Android 12+）、通知（Android 13+），
+以及**显示在其他应用上层**（连接弹窗需要）。
 
-### 架构与融合说明
+## 已知限制
 
-见 [docs/FUSION_ARCHITECTURE.md](docs/FUSION_ARCHITECTURE.md)：分层、品牌分流规则、
-两套协议栈各跑在哪个进程、以及代码风格约定。
+- 免 root 无法使用系统弹窗与融合设备中心 —— 它们由系统进程提供；
+- 免 root 的超级岛取决于 MIUI 对第三方焦点通知的白名单，表现可能不如 Root 稳定；
+- 云端目录只提供元数据，功能能力以设备自报为准，未连接过的机型无法预知全部能力。
 
-### 致谢
+## 致谢
 
-- [Art-Chen/HyperPods](https://github.com/Art-Chen/HyperPods) by Art_Chen — 两条线共同的原始项目
-- [1812z/OppoPods](https://github.com/1812z/OppoPods) — 本项目的骨架：底栏三页结构、
-  融合设备中心与重启作用域
-- [Leaf-lsgtky/OppoPods](https://github.com/Leaf-lsgtky/OppoPods) — 配置档体系与界面细节
-- [bqj6666/FxxkMoondrop](https://github.com/bqj6666/FxxkMoondrop) — 水月雨机型适配与真机实测数据
-- [MegaSuite/moondrop-link-desktop](https://github.com/MegaSuite/moondrop-link-desktop) — EDGE 协议逆向（GAIA V3 命令目录）
-- [lingbai-rong/PuddingPods](https://github.com/lingbai-rong/PuddingPods) — PUDDING（MD-TWS-056）协议文档
-- [Miuix](https://github.com/YuKongA/miuix) — HyperOS 风格 Compose UI 组件
+- [Art-Chen/HyperPods](https://github.com/Art-Chen/HyperPods) — 原始项目
+- [1812z/OppoPods](https://github.com/1812z/OppoPods) — 底栏结构与作用域重启
+- [bqj6666/FxxkMoondrop](https://github.com/bqj6666/FxxkMoondrop) — 水月雨协议逆向与实测数据
+- [MegaSuite/moondrop-link-desktop](https://github.com/MegaSuite/moondrop-link-desktop) — GAIA V3 命令目录
+- [Miuix](https://github.com/YuKongA/miuix) — HyperOS 风格 Compose 组件
 
-### 许可证
+## 许可证
 
 GPL-3.0

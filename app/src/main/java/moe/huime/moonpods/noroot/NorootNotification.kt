@@ -58,11 +58,11 @@ object NorootNotification {
      * 关掉 sound / vibration 后仍然「不响铃、不震动」，只是不再被系统归到「静默」最低档。
      * 通道重要性创建后不可修改，所以 [ensureChannel] 发现同名通道档位不对时会删掉重建。
      */
-    private const val CHANNEL_ID = "hyperpods_moondrop_app_status"
+    const val CHANNEL_ID = "hyperpods_moondrop_app_status"
 
     private const val NOTIFICATION_TAG = "HyperPodsAppState"
 
-    private const val NOTIFICATION_ID = 10004
+    const val NOTIFICATION_ID = 10004
 
     /** 通道档位：见 [CHANNEL_ID] 的说明（要进 HyperOS 焦点通知路径就不能用 LOW）。 */
     private const val CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_DEFAULT
@@ -128,7 +128,11 @@ object NorootNotification {
      * 移植版的异步管线在当前 ROM 上没有落地，这条作为确定性入口：
      * 建通道 → notify，失败只记日志。内容与 Root 模式一致（机型 + 左右电量 + 断开）。
      */
-    fun postSimple(context: Context, snapshot: PodSnapshot) {
+    /**
+     * @param trigger 本次发布对应的「显示时机」下标（见 ConfigManager.ISLAND_SHOW_TIMING_*）；
+     *   为 null 时按常驻通知处理（不触发额外的岛展示）。
+     */
+    fun postSimple(context: Context, snapshot: PodSnapshot, trigger: Int? = null) {
         runCatching {
             val nm = context.getSystemService(android.app.NotificationManager::class.java) ?: return
             purgeLegacyChannels(context, nm)
@@ -160,7 +164,12 @@ object NorootNotification {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
             // 焦点通知（超级岛）：与 Root 模式共用同一份构建逻辑；失败退回普通通知
-            val focusExtras = runCatching {
+            // 超级岛是否启用跟随设置：关闭时不附加焦点模板（只发普通通知）
+            val cm = moe.huime.moonpods.config.ConfigManager
+            // 上岛要求：岛未被关闭，且本次事件在「超级岛显示时机」里被勾选
+            val timingAllowed = trigger == null || cm.islandShowTimings().contains(trigger)
+            val islandOn = cm.islandMode() != cm.ISLAND_MODE_NONE && timingAllowed
+            val focusExtras = if (!islandOn) null else runCatching {
                 NorootFocusNotification.buildExtras(
                     context = context,
                     titleText = title,

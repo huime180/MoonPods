@@ -280,6 +280,15 @@ object MoondropLink {
                     "transports=${model.transports} useRfcomm=$useRfcomm",
             )
             if (useRfcomm) connectRfcomm(btDevice, retry) else connectGattInternal(btDevice)
+            // 看门狗：链路建起来但 10 秒内没有拿到任何电量 → 视为空连接，主动断开并上报，
+            // 避免 UI 停留在「已连接的空设备」页
+            scope.launch {
+                kotlinx.coroutines.delay(10_000)
+                if (connected && batteryState.lastUpdateAt == 0L) {
+                    Log.w(TAG, "connect watchdog: no data after 10s, dropping link")
+                    disconnectInternal(notify = true)
+                }
+            }
         }
     }
 

@@ -786,8 +786,8 @@ fun MainUI(
             connectedDeviceAddress = ""
             mainTitle.value = ""
         }
-        // 页面上的「断开」与通知里的按钮语义一致：断开系统蓝牙连接（不只是模块链路）
-        moe.huime.moonpods.utils.BluetoothDisconnector.disconnect(context, device.address)
+        // 断开动作统一由各模式自己的接收端执行（免 root 在应用进程，Root 在蓝牙进程），
+        // 页面只发请求，避免两处逻辑各断一次、行为不一致。
         Intent(MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST).apply {
             putExtra("device", device)
             setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")

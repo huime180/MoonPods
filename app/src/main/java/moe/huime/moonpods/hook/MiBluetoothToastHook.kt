@@ -47,6 +47,21 @@ object MiBluetoothToastHook : HookContext() {
      * 是唯一能立即生效的通道；此前只有 com.android.bluetooth 注册了接收器，
      * 本进程（com.xiaomi.bluetooth，真正发通知的那个）收不到。
      */
+    /** 关闭开关时撤掉已发布的耳机通知（按 tag 扫描，只清本进程的 BTHeadset*）。 */
+    private fun cancelStaleNotifications(context: Context) {
+        runCatching {
+            val nm = context.getSystemService("notification") as android.app.NotificationManager
+            nm.activeNotifications
+                .filter { it.tag?.startsWith("BTHeadset") == true }
+                .forEach { n ->
+                    runCatching {
+                        nm.cancelAsUser(n.tag, n.id, moe.huime.moonpods.utils.SystemApisUtils.getUserAllUserHandle())
+                    }
+                }
+            Log.i("HyperPods", "focus switch off: stale headset notifications cancelled")
+        }.onFailure { Log.w("HyperPods", "cancel stale notifications failed", it) }
+    }
+
     private fun ensureSwitchReceiver(context: Context) {
         if (switchReceiverRegistered) return
         switchReceiverRegistered = true
@@ -54,8 +69,14 @@ object MiBluetoothToastHook : HookContext() {
             context.applicationContext.registerReceiver(object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context?, intent: Intent?) {
                     when (intent?.action) {
-                        MoonPodsAction.SET_FOCUS_NOTIFICATION ->
-                            moe.huime.moonpods.config.FocusNotificationBridge.set(intent.getBooleanExtra("enabled", true))
+                        MoonPodsAction.SET_FOCUS_NOTIFICATION -> {
+                            val enabled = intent.getBooleanExtra("enabled", true)
+                            moe.huime.moonpods.config.FocusNotificationBridge.set(enabled)
+                            // 关闭开关要立刻撤掉已经发出去的那条，而不是等下一次更新
+                            if (!enabled && ctx != null) {
+                                cancelStaleNotifications(ctx.applicationContext)
+                            }
+                        }
                         MoonPodsAction.SET_WORK_MODE -> {
                             val mode = intent.getIntExtra("mode", -1)
                             if (mode >= 0) moe.huime.moonpods.pods.WorkModeBridge.override = mode
@@ -71,11 +92,9 @@ object MiBluetoothToastHook : HookContext() {
     }
 
     override fun onHook() {
-        // 免 root 模式：系统应用保持原样，不做任何 hook（重启作用域后即恢复）
-        if (moe.huime.moonpods.pods.WorkModeBridge.isNoRoot()) {
-            Log.i("HyperPods", "no-root mode: skip MiBluetoothToastHook")
-            return
-        }
+        // 不能按模式早退：被注入进程的 remote prefs 会滞后，退出后就连
+        // 「切回 Root 时重新发通知」都做不到（Root 模式通知完全消失）。
+        // 模式判断放在每次通知更新时（ConfigManager.focusNotificationFresh / WorkModeBridge）。
 
         // 焦点通知总开关不再决定「是否挂钩」：关掉时要能撤掉已有通知、打开时要能立刻恢复，
         // 因此挂钩始终生效，开关在每次更新通知时判断。

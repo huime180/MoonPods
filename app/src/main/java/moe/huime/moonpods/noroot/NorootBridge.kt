@@ -52,6 +52,8 @@ object NorootBridge : PodListener {
         }.getOrNull()
         if (snap?.connected == true) {
             _snapshot.value = snap
+            // 有会话就拉起保活服务：应用被划掉后仍能继续控制耳机
+            runCatching { NorootKeepAliveService.start(context.applicationContext) }
             if (moe.huime.moonpods.config.ConfigManager.focusNotification()) {
                 broadcastState(snap)
             }
@@ -88,13 +90,39 @@ object NorootBridge : PodListener {
             if (!adapter.isEnabled) return
             val device = adapter.getRemoteDevice(address)
             if (device.bondState != BluetoothDevice.BOND_BONDED) return
+            // 只在系统确实连着该耳机时接管：仅凭「上次连过」会连出一台没有任何数据的空耳机
+            val manager = context.getSystemService(android.bluetooth.BluetoothManager::class.java)
+            val a2dpState = runCatching {
+                manager?.getConnectionState(device, android.bluetooth.BluetoothProfile.A2DP)
+            }.getOrNull()
+            if (a2dpState != android.bluetooth.BluetoothProfile.STATE_CONNECTED) {
+                Log.i(TAG, "autoConnect skipped: A2DP state=$a2dpState")
+                return
+            }
             if (matchModel(device.name ?: device.alias) == null) return
             connect(context, device)
         }.onFailure { Log.w(TAG, "autoConnect failed", it) }
     }
 
-    fun disconnect() {
+    /**
+     * @param disconnectBluetooth 是否同时断开系统蓝牙连接。
+     *   只有用户主动点「断开连接」时才为 true；应用退出、模式切换等
+     *   内部收尾必须为 false，否则关掉应用会把耳机也断掉。
+     */
+    /**
+     * 取消模块接管。
+     *
+     * 免 root 无权限断开系统蓝牙（A2DP disconnect 是 @SystemApi，第三方调用会被拒），
+     * 因此这里只清接管状态，不去碰蓝牙连接；要断开请在系统蓝牙里操作。
+     */
+    /** 只取消模块接管，不碰系统蓝牙连接。 */
+    fun disconnect(@Suppress("UNUSED_PARAMETER") disconnectBluetooth: Boolean = false) {
+        NorootKeepAliveService.stop(appContext ?: return)
         if (MoondropLink.isInitialized()) MoondropLink.disconnect()
+        // 立刻通知 UI：否则通知撤了、页面还显示已连接（点进去是一台空耳机）
+        _snapshot.value = PodSnapshot(connected = false)
+        lastBroadcast = null
+        broadcastDisconnected()
     }
 
     fun isInitialized(): Boolean = MoondropLink.isInitialized()
@@ -217,12 +245,7 @@ object NorootBridge : PodListener {
                             if (device != null) MoondropLink.connect(device)
                         }
                         MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST,
-                        MoonPodsAction.NOROOT_DISCONNECT -> {
-                            // 语义统一为「断开蓝牙连接」：先让系统断开 A2DP，再收模块链路
-                            val addr = snapshot.value?.deviceAddress
-                            moe.huime.moonpods.utils.BluetoothDisconnector.disconnect(ctx, addr)
-                            MoondropLink.disconnect()
-                        }
+                        MoonPodsAction.NOROOT_DISCONNECT -> disconnect()
                     }
                 }.onFailure { Log.w(TAG, "control $action failed", it) }
             }
@@ -256,6 +279,14 @@ object NorootBridge : PodListener {
             PodEvent.Disconnected -> null
             else -> runCatching { MoondropLink.snapshot() }.getOrNull()
         }
+        // 「已连接但没有任何数据」不算连上：连接失败时链路对象仍存在，
+        // 直接广播已连接会让 UI 进入一台空设备页。等第一份数据到达再广播。
+        val dataArrived = snap != null &&
+            (snap.battery.anyKnown || snap.ancModes.isNotEmpty())
+        if (snap != null && !dataArrived) {
+            Log.i(TAG, "connected but no data yet, hold UI in connecting state")
+            return
+        }
         _snapshot.value = snap
         if (snap == null) {
             lastBroadcast = null
@@ -276,7 +307,11 @@ object NorootBridge : PodListener {
                 NorootNotification.cancelImmediate(ctx)
             } else {
                 Log.i(TAG, "request notification: ${snap.deviceName} ${snap.battery.left}/${snap.battery.right}")
-                NorootNotification.postSimple(ctx, snap)
+                NorootNotification.postSimple(
+                    ctx,
+                    snap,
+                    moe.huime.moonpods.config.ConfigManager.ISLAND_SHOW_TIMING_CONNECTED,
+                )
             }
         }.onFailure { Log.w(TAG, "notification post failed", it) }
         runCatching { broadcastState(snap) }
@@ -405,6 +440,13 @@ object NorootBridge : PodListener {
      *   2 不弹出
      * 只有授予「显示在其他应用上层」时才允许从后台拉起界面。
      */
+    /**
+     * 由「蓝牙已连接到耳机」这一事件触发（静态接收器的 CONNECTED 分支），
+     * 与模块链路是否建立成功无关 —— 链路失败时用户同样应该看到弹窗，
+     * 而不是等到 connect 成功后才弹（那时常常已经错过了连接瞬间）。
+     */
+    fun showConnectPopup() = maybeShowPopup()
+
     private fun maybeShowPopup() {
         val ctx = appContext ?: return
         when (moe.huime.moonpods.config.ConfigManager.connectPopup()) {

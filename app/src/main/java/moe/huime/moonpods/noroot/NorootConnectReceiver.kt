@@ -40,6 +40,8 @@ class NorootConnectReceiver : BroadcastReceiver() {
         // 只接管识别得出的水月雨机型；认不出来就不碰
         val name = runCatching { device.name ?: device.alias }.getOrNull()
         if (NorootBridge.matchModel(name) == null) return
+        // 弹窗跟的是「蓝牙连上耳机」，先弹；模块接管是后续动作
+        NorootBridge.showConnectPopup()
         NorootBridge.connect(context, device)
     }
 }

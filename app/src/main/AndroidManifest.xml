@@ -7,6 +7,8 @@
     <!-- 连接弹窗（PopupActivity）：没有这条声明时系统里根本没有悬浮窗开关，
          canDrawOverlays() 恒为 false，后台启动 Activity 也会被 BAL 拦截 -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <!--
         「从水月雨官方 App 导入图片」要访问 MOONDROP 的公开产品目录与图床
@@ -96,6 +98,10 @@
         <meta-data
             android:name="xposedscope"
             android:resource="@array/xposedscope" />
+            <service
+            android:name=".noroot.NorootKeepAliveService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
     </application>
 
 </manifest>

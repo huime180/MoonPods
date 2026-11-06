@@ -345,12 +345,32 @@ object MoondropModelRegistry {
      *  · ANC_V2 档位：UI[关,降,透,抗,自适应] → dev [0,4,2,3,1]（PuddingPods 文档 + 真机确认）
      *  · 增益：设备码 0=高 / 1=中 / 2=低 → UI[低,中,高] 需映射 [2,1,0]
      */
+    /**
+     * 内置实测校准（来自 FxxkMoondrop 的真机数据）。
+     *
+     * 云端目录只给元数据，能力靠探测；但「档位 ↔ 设备码」这类语义探测不出来，
+     * 因此这些机型按实测表内置，不必等探测结果。
+     */
     private fun calibrationFor(key: String): Pair<AncProfile?, DcProfile> = when {
+        // 布丁：ANC V2 五档，UI [关,降,透,抗,自适应] → 设备码 [0,4,2,3,1]；三档增益 + 指示灯
         key.contains("PUDDING") -> ancPudding() to DcProfile(
             hasGain = true,
             gainMap = intArrayOf(2, 1, 0),
             hasLed = true,
         )
+        // 梦回2 / GA2：AudioCuration，SET [1,2,4,3]、GET 0-based；三档反向增益 + 空间音频，无指示灯
+        key.contains("GOLDEN AGES 2") || key.contains("GA2") -> anc4Ga2() to DcProfile(
+            hasGain = true,
+            gainMap = intArrayOf(2, 1, 0),
+            hasSpatial = true,
+        )
+        // 太空漫游2：AudioCuration 同上映射；三档反向增益，无空间音频、无指示灯
+        key.contains("SPACE TRAVEL 2") -> anc4Ga2() to DcProfile(
+            hasGain = true,
+            gainMap = intArrayOf(2, 1, 0),
+        )
+        // U.C.T.S：开放式，硬件无降噪，仅识别与控制
+        key.contains("U.C.T.S") -> null to NONE
         else -> null to NONE
     }
 
