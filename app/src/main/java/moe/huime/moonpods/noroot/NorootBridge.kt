@@ -53,6 +53,7 @@ object NorootBridge : PodListener {
 
     fun connect(context: Context, device: BluetoothDevice) {
         init(context)
+        lastDevice = device
         MoondropLink.connect(device)
     }
 
@@ -162,40 +163,92 @@ object NorootBridge : PodListener {
         broadcastState(snap)
     }
 
-    /** 把快照翻译成与 Root 模式一致的广播。 */
+    /**
+     * 把快照翻译成与 Root 模式**完全相同**的广播契约。
+     *
+     * 逐项对齐 MoondropController 的 publish*：
+     *   action 名：PODS_CONNECTED / PODS_DISCONNECTED / BATTERY_CHANGED / ANC_CHANGED /
+     *              GAIN_CHANGED / LED_CHANGED / PROMPT_TONE_CHANGED /
+     *              PROMPT_VOLUME_CHANGED / LHDC_CHANGED / DUAL_CONNECTION_CHANGED
+     *   extras  ：EXTRA_MAC / EXTRA_DEVICE_NAME / EXTRA_DEVICE + 各功能字段
+     * 同时补一份 ACTION_PODS_* 别名 —— UI 两套 action 都注册了，缺任何一套都会"不显示"。
+     */
     private fun broadcastState(snap: PodSnapshot) {
         val ctx = appContext ?: return
-        fun send(intent: Intent) {
-            intent.setPackage(BuildConfig.APPLICATION_ID)
-            intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
-            ctx.sendBroadcast(intent)
+        val device = lastDevice
+        fun send(vararg actions: String, fill: (Intent) -> Unit) {
+            actions.forEach { action ->
+                ctx.sendBroadcast(Intent(action).apply {
+                    putExtra(MoonPodsAction.EXTRA_MAC, snap.deviceAddress)
+                    putExtra(MoonPodsAction.EXTRA_DEVICE_NAME, snap.deviceName)
+                    putExtra(MoonPodsAction.EXTRA_DEVICE, device)
+                    putExtra("address", snap.deviceAddress)
+                    putExtra("device_name", snap.deviceName)
+                    fill(this)
+                    setPackage(BuildConfig.APPLICATION_ID)
+                    addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                })
+            }
         }
-        send(Intent(MoonPodsAction.ACTION_PODS_CONNECTED).apply {
-            putExtra(MoonPodsAction.EXTRA_MAC, snap.deviceAddress)
-            putExtra(MoonPodsAction.EXTRA_DEVICE_NAME, snap.deviceName)
-            putExtra("address", snap.deviceAddress)
-            putExtra("device_name", snap.deviceName)
-        })
-        send(Intent(MoonPodsAction.ACTION_PODS_BATTERY_CHANGED).apply {
-            putExtra("address", snap.deviceAddress)
-            putExtra("status", BatteryParams(
-                left = PodParams(snap.battery.left, snap.battery.leftCharging, true),
-                right = PodParams(snap.battery.right, snap.battery.rightCharging, true),
+
+        send(
+            MoonPodsAction.PODS_CONNECTED,
+            MoonPodsAction.ACTION_PODS_CONNECTED,
+        ) {}
+
+        send(
+            MoonPodsAction.BATTERY_CHANGED,
+            MoonPodsAction.ACTION_PODS_BATTERY_CHANGED,
+        ) { i ->
+            i.putExtra("status", BatteryParams(
+                left = PodParams(snap.battery.left, snap.battery.leftCharging, snap.battery.leftKnown),
+                right = PodParams(snap.battery.right, snap.battery.rightCharging, snap.battery.rightKnown),
                 case = PodParams(snap.battery.case, snap.battery.caseCharging, snap.battery.caseKnown),
             ))
-        })
+        }
+
         if (snap.ancIndex >= 0 && snap.ancModes.isNotEmpty()) {
-            send(Intent(MoonPodsAction.ACTION_PODS_ANC_CHANGED).apply {
-                putExtra("address", snap.deviceAddress)
-                putExtra(MoonPodsAction.EXTRA_STATUS, snap.ancIndex)
-                putStringArrayListExtra(
+            send(
+                MoonPodsAction.ANC_CHANGED,
+                MoonPodsAction.ACTION_PODS_ANC_CHANGED,
+            ) { i ->
+                i.putExtra(MoonPodsAction.EXTRA_STATUS, snap.ancIndex)
+                i.putStringArrayListExtra(
                     MoonPodsAction.EXTRA_ANC_IDS,
                     ArrayList(snap.ancModes.map { it.id }),
                 )
-            })
+            }
+        }
+
+        if (snap.gainIndex >= 0) {
+            send(MoonPodsAction.GAIN_CHANGED) { i ->
+                i.putExtra(MoonPodsAction.EXTRA_STATUS, snap.gainIndex)
+            }
+        }
+        snap.ledOn?.let { on ->
+            send(MoonPodsAction.LED_CHANGED) { i -> i.putExtra(MoonPodsAction.EXTRA_ENABLED, on) }
+        }
+        snap.promptToneOn?.let { on ->
+            send(MoonPodsAction.PROMPT_TONE_CHANGED) { i -> i.putExtra(MoonPodsAction.EXTRA_ENABLED, on) }
+        }
+        if (snap.promptVolumeRaw >= 0) {
+            send(MoonPodsAction.PROMPT_VOLUME_CHANGED) { i ->
+                i.putExtra(MoonPodsAction.EXTRA_PROMPT_VOLUME_RAW, snap.promptVolumeRaw)
+            }
+        }
+        snap.lhdcOn?.let { on ->
+            send(MoonPodsAction.LHDC_CHANGED) { i -> i.putExtra(MoonPodsAction.EXTRA_ENABLED, on) }
+        }
+        snap.dualConnectionOn?.let { on ->
+            send(MoonPodsAction.DUAL_CONNECTION_CHANGED) { i ->
+                i.putExtra(MoonPodsAction.EXTRA_ENABLED, on)
+            }
         }
         NorootNotification.post(ctx, snap)
     }
+
+    /** 最近一次连接的设备（广播里要带上 EXTRA_DEVICE，通知与原生页都依赖它）。 */
+    @Volatile private var lastDevice: BluetoothDevice? = null
 
     private fun broadcastDisconnected() {
         val ctx = appContext ?: return
