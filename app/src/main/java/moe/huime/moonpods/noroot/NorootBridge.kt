@@ -171,13 +171,13 @@ object NorootBridge : PodListener {
      *              GAIN_CHANGED / LED_CHANGED / PROMPT_TONE_CHANGED /
      *              PROMPT_VOLUME_CHANGED / LHDC_CHANGED / DUAL_CONNECTION_CHANGED
      *   extras  ：EXTRA_MAC / EXTRA_DEVICE_NAME / EXTRA_DEVICE + 各功能字段
-     * 同时补一份 ACTION_PODS_* 别名 —— UI 两套 action 都注册了，缺任何一套都会"不显示"。
+     * 只发这一套：Root 与免 root 互斥，UI 不需要同时兼容两套事件源。
      */
     private fun broadcastState(snap: PodSnapshot) {
         val ctx = appContext ?: return
         val device = lastDevice
-        fun send(vararg actions: String, fill: (Intent) -> Unit) {
-            actions.forEach { action ->
+        fun send(action: String, fill: (Intent) -> Unit) {
+            run {
                 ctx.sendBroadcast(Intent(action).apply {
                     putExtra(MoonPodsAction.EXTRA_MAC, snap.deviceAddress)
                     putExtra(MoonPodsAction.EXTRA_DEVICE_NAME, snap.deviceName)
@@ -191,15 +191,9 @@ object NorootBridge : PodListener {
             }
         }
 
-        send(
-            MoonPodsAction.PODS_CONNECTED,
-            MoonPodsAction.ACTION_PODS_CONNECTED,
-        ) {}
+        send(MoonPodsAction.PODS_CONNECTED) {}
 
-        send(
-            MoonPodsAction.BATTERY_CHANGED,
-            MoonPodsAction.ACTION_PODS_BATTERY_CHANGED,
-        ) { i ->
+        send(MoonPodsAction.BATTERY_CHANGED) { i ->
             i.putExtra("status", BatteryParams(
                 left = PodParams(snap.battery.left, snap.battery.leftCharging, snap.battery.leftKnown),
                 right = PodParams(snap.battery.right, snap.battery.rightCharging, snap.battery.rightKnown),
@@ -208,10 +202,7 @@ object NorootBridge : PodListener {
         }
 
         if (snap.ancIndex >= 0 && snap.ancModes.isNotEmpty()) {
-            send(
-                MoonPodsAction.ANC_CHANGED,
-                MoonPodsAction.ACTION_PODS_ANC_CHANGED,
-            ) { i ->
+            send(MoonPodsAction.ANC_CHANGED) { i ->
                 i.putExtra(MoonPodsAction.EXTRA_STATUS, snap.ancIndex)
                 i.putStringArrayListExtra(
                     MoonPodsAction.EXTRA_ANC_IDS,
@@ -252,7 +243,7 @@ object NorootBridge : PodListener {
 
     private fun broadcastDisconnected() {
         val ctx = appContext ?: return
-        ctx.sendBroadcast(Intent(MoonPodsAction.ACTION_PODS_DISCONNECTED).apply {
+        ctx.sendBroadcast(Intent(MoonPodsAction.PODS_DISCONNECTED).apply {
             setPackage(BuildConfig.APPLICATION_ID)
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         })
