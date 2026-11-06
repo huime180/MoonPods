@@ -178,24 +178,30 @@ fun SettingsPage(
                     onCheckedChange = { onDesktopIconHiddenChange(it) }
                 )
                 OverlayDropdownPreference(
-                    title = stringResource(R.string.connect_popup),
-                    summary = stringResource(R.string.connect_popup_summary),
-                    items = connectPopupOptions,
-                    selectedIndex = connectPopupValues.indexOf(connectPopup.value).coerceAtLeast(0),
-                    onSelectedIndexChange = { onConnectPopupChange(connectPopupValues[it]) }
-                )
-                OverlayDropdownPreference(
                     title = stringResource(R.string.work_mode),
                     summary = stringResource(R.string.work_mode_summary),
                     items = workModeOptions,
                     selectedIndex = workModeValues.indexOf(workMode.value).coerceAtLeast(0),
                     onSelectedIndexChange = { onWorkModeChange(workModeValues[it]) }
                 )
+            }
+        }
+
+        item {
+            // 通知与弹窗：与「超级岛」分开，单独成卡放在其上方
+            Card(modifier = Modifier.padding(top = 12.dp)) {
                 SwitchPreference(
                     title = stringResource(R.string.focus_notification),
                     summary = stringResource(R.string.focus_notification_summary),
                     checked = focusNotification.value,
                     onCheckedChange = { onFocusNotificationChange(it) }
+                )
+                OverlayDropdownPreference(
+                    title = stringResource(R.string.connect_popup),
+                    summary = stringResource(R.string.connect_popup_summary),
+                    items = connectPopupOptions,
+                    selectedIndex = connectPopupValues.indexOf(connectPopup.value).coerceAtLeast(0),
+                    onSelectedIndexChange = { onConnectPopupChange(connectPopupValues[it]) }
                 )
             }
         }
