@@ -58,21 +58,6 @@ class SettingsHeadsetHook : HookContext() {
                 }
             }
         }.onFailure { Log.w(TAG, "MiuiHeadsetFragment hook skipped", it) }
-
-        runCatching {
-            hookBefore(TextView::class.java.getDeclaredMethod(
-                "setText", CharSequence::class.java, TextView.BufferType::class.java, Boolean::class.javaPrimitiveType, Int::class.javaPrimitiveType
-            )) {
-                val view = instance as? TextView ?: return@hookBefore
-                val activity = activityOf(view.context) ?: return@hookBefore
-                if (!managedPages.contains(activity)) return@hookBefore
-                val name = entryName(view) ?: return@hookBefore
-                val label = ancLabels[name] ?: return@hookBefore
-                val original = (args[0] as? CharSequence)?.toString().orEmpty()
-                args[0] = (if (original.startsWith(" ")) " " else "") + label +
-                    (if (original.endsWith(" ")) " " else "")
-            }
-        }.onFailure { Log.w(TAG, "TextView.setText hook skipped", it) }
     }
 
     /** 隐藏本机型没有的视图；找不到就跳过（不同 ROM 版本 id 可能不同）。 */

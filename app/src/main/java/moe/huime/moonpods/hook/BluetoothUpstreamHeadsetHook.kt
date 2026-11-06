@@ -15,6 +15,7 @@ import java.lang.reflect.Method
 import moe.huime.moonpods.BuildConfig
 import moe.huime.moonpods.config.ConfigManager
 import moe.huime.moonpods.utils.miuiStrongToast.data.BatteryParams
+import moe.huime.moonpods.pods.moondrop.MoondropController
 import moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction
 import moe.huime.moonpods.utils.miuiStrongToast.data.PodParams
 import org.json.JSONObject
