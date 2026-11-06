@@ -195,8 +195,10 @@ object NorootBridge : PodListener {
         lastBroadcast = snap
         Log.i(TAG, "broadcast state: anc=${snap.ancIndex}/${snap.ancModes.size} gain=${snap.gainIndex} led=${snap.ledOn} lhdc=${snap.lhdcOn} dual=${snap.dualConnectionOn}")
         // 通知先发：广播链路任何一环抛异常都不该让通知丢失（之前就是这个顺序问题）
-        runCatching { NorootNotification.post(appContext ?: return, snap) }
-            .onFailure { Log.w(TAG, "notification post failed", it) }
+        runCatching {
+            Log.i(TAG, "request notification: ${snap.deviceName} ${snap.battery.left}/${snap.battery.right}")
+            NorootNotification.post(appContext ?: return, snap)
+        }.onFailure { Log.w(TAG, "notification post failed", it) }
         runCatching { broadcastState(snap) }
             .onFailure { Log.w(TAG, "state broadcast failed", it) }
         if (event is PodEvent.Connected) {
