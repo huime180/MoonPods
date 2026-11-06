@@ -1,4 +1,4 @@
-package com.chenyc.hyperpods.pods
+package moe.huime.moonpods.pods
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

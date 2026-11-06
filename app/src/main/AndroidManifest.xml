@@ -60,7 +60,7 @@
         </activity>
         <provider
             android:name=".config.PodImageProvider"
-            android:authorities="com.chenyc.hyperpods.podimages"
+            android:authorities="moe.huime.moonpods.podimages"
             android:exported="true"
             android:grantUriPermissions="false" />
         <!-- Set as Xposed Module -->

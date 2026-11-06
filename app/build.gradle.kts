@@ -15,15 +15,15 @@ apksign {
 }
 
 android {
-    namespace = "com.chenyc.hyperpods"
+    namespace = "moe.huime.moonpods"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.chenyc.hyperpods"
+        applicationId = "moe.huime.moonpods"
         minSdk = 35
         targetSdk = 36
-        versionCode = 16
-        versionName = "2.1.0"
+        versionCode = 20
+        versionName = "3.0.0"
         buildConfigField("long", "BUILD_TIMESTAMP", System.currentTimeMillis().toString())
     }
 

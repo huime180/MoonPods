@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">HyperPods</string>
+    <string name="app_name">MoonPods</string>
     <string name="pod_info">Pod Info</string>
     <string name="about">About HyperPods</string>
     <string name="about_project_home">Project Home</string>
