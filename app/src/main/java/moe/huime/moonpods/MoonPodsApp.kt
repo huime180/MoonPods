@@ -17,6 +17,8 @@ class MoonPodsApp : Application(), XposedServiceHelper.OnServiceListener {
             ConfigManager.init(prefs)
             if (ConfigManager.workMode() == ConfigManager.WORK_MODE_NOROOT) {
                 moe.huime.moonpods.noroot.NorootBridge.init(this)
+                // 启动即尝试恢复上一次的耳机连接（Root 模式由 hook 侧自动接管）
+                moe.huime.moonpods.noroot.NorootBridge.autoConnect(this)
             }
         }
     }

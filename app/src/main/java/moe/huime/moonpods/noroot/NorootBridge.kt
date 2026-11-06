@@ -64,7 +64,33 @@ object NorootBridge : PodListener {
     fun connect(context: Context, device: BluetoothDevice) {
         init(context)
         lastDevice = device
+        // 记住地址：应用重启后据此自动回到这台耳机
+        runCatching {
+            context.getSharedPreferences(moe.huime.moonpods.config.ConfigManager.PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().putString("noroot_last_address", device.address).apply()
+        }
         MoondropLink.connect(device)
+    }
+
+    /**
+     * 启动时自动连接：已配对且上次连过的耳机，若当前无链路就尝试恢复。
+     * 只在免 root 模式调用；Root 模式由蓝牙进程的 hook 自己接管。
+     */
+    fun autoConnect(context: Context) {
+        if (moe.huime.moonpods.config.ConfigManager.workMode() !=
+            moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT
+        ) return
+        if (MoondropLink.isInitialized() && MoondropLink.snapshot().connected) return
+        val prefs = context.getSharedPreferences(moe.huime.moonpods.config.ConfigManager.PREFS_NAME, Context.MODE_PRIVATE)
+        val address = prefs.getString("noroot_last_address", null) ?: return
+        runCatching {
+            val adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter() ?: return
+            if (!adapter.isEnabled) return
+            val device = adapter.getRemoteDevice(address)
+            if (device.bondState != BluetoothDevice.BOND_BONDED) return
+            if (matchModel(device.name ?: device.alias) == null) return
+            connect(context, device)
+        }.onFailure { Log.w(TAG, "autoConnect failed", it) }
     }
 
     fun disconnect() {
