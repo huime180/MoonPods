@@ -10,10 +10,10 @@
 -renamesourcefileattribute SourceFile
 
 # Keep Xposed entry point
--keep class com.chenyc.hyperpods.hook.HookEntry { *; }
+-keep class moe.huime.moonpods.hook.HookEntry { *; }
 
 # Keep all hooker classes (referenced by name in Xposed framework)
--keep class com.chenyc.hyperpods.hook.** { *; }
+-keep class moe.huime.moonpods.hook.** { *; }
 
 # Keep Parcelable data classes (used in broadcast extras)
--keep class com.chenyc.hyperpods.utils.miuiStrongToast.data.** { *; }
+-keep class moe.huime.moonpods.utils.miuiStrongToast.data.** { *; }
