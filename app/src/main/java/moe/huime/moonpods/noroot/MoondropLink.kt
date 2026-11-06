@@ -266,7 +266,7 @@ object MoondropLink {
         scope.launch {
             // ⚠ 必须先拿官方云端配置（芯片族）再决定线路，否则第一次连接会退化成
             //   FALLBACK 的 BLE 优先（布丁 → GATT status=147 → 只能靠回落）。
-            MoondropCatalog.ensureLoaded()
+            moe.huime.moonpods.pods.moondrop.MoondropCatalog.ensureLoaded()
             model = MoondropModels.match(btDevice.name) ?: MoondropModels.FALLBACK
             useRfcomm = preferRfcomm || model.transports.firstOrNull() == PodTransport.RFCOMM_GAIA
             Log.i(

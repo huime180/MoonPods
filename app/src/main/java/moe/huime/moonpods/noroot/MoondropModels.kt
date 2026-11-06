@@ -29,6 +29,8 @@
  */
 package moe.huime.moonpods.noroot
 
+import moe.huime.moonpods.pods.moondrop.MoondropCatalog as RootMoondropCatalog
+
 /** 传输层：决定用哪条链路与耳机通信。 */
 enum class PodTransport {
     /** GAIA v3 over BLE GATT（大多数 QCC/蓝讯系水月雨耳机） */
@@ -306,7 +308,12 @@ object MoondropModels {
         }
         // 官方云端目录兜底（与官方 APP 同源）：官方命名/拼写变体（UTCS、SP2…）与新机型
         // 都能认出来。目录没拉到或没命中时返回 null，行为与以前完全一致。
-        MoondropCatalog.resolve(deviceName)?.let { return catalogModel(it) }
+        // 云端目录复用 Root 模式那一份（pods/moondrop/MoondropCatalog），避免两套目录漂移
+        RootMoondropCatalog.resolve(deviceName)?.let {
+            return catalogModel(
+                MoondropCatalog.Entry(name = it.name, key = it.key, chipRoot = it.chipRoot)
+            )
+        }
         if (n.contains("MOONDROP") || n.contains("水月雨")) return FALLBACK
         return null
     }
