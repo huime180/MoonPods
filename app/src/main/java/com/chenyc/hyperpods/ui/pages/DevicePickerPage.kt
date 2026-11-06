@@ -298,7 +298,10 @@ private fun DeviceRow(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            if (connecting) {
+            // 已连接时必须显示断开按钮：connecting 是「本轮点击后等待回包」的临时态，
+            // 模块侧的 PODS_CONNECTED 万一没收到（进程重启/广播丢失）就会永远为真，
+            // 结果连接成功也一直转圈。connected 是更权威的状态，优先它。
+            if (connecting && !connected) {
                 InfiniteProgressIndicator()
             } else if (connected) {
                 IconButton(

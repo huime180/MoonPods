@@ -337,6 +337,11 @@ fun MainUI(
         }
     }
 
+    // 兜底：模块报告已连接时，清掉「正在连接」标记（广播丢失/进程重启也不会一直转圈）
+    LaunchedEffect(hookConnected.value) {
+        if (hookConnected.value) connectingDeviceAddress = null
+    }
+
     LaunchedEffect(pendingOpenEarphonesAfterPickerLoaded, connectingDeviceAddress, hookConnected.value) {
         if (pendingOpenEarphonesAfterPickerLoaded && connectingDeviceAddress == null && hookConnected.value) {
             withFrameNanos { }
