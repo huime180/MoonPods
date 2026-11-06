@@ -190,7 +190,7 @@ fun SettingsPage(
                             enabled.value = value
                             com.chenyc.hyperpods.config.ConfigManager.updateNorootEnabled(
                                 prefs,
-                                com.chenyc.hyperpods.MoonPodsApp.xposedService,
+                                com.chenyc.hyperpods.HyperPodsApp.xposedService,
                                 value,
                             )
                             com.chenyc.hyperpods.noroot.NorootBridge.setEnabled(ctx, value)

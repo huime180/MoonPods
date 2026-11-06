@@ -210,7 +210,7 @@ object ConfigManager {
             ?.mapNotNull(String::toIntOrNull)
             ?.toSet()
         val directNorootEnabled = prefs.takeIf { it.contains(PREF_KEY_NOROOT_ENABLED) }
-            ?.getBoolean(PREF_KEY_NOROOT_ENABLED, config.norootEnabled) ?: config.norootEnabled
+            ?.getBoolean(PREF_KEY_NOROOT_ENABLED, false)
         val directAutoGameMode = prefs.takeIf { it.contains(PREF_KEY_AUTO_GAME_MODE) }
             ?.getBoolean(PREF_KEY_AUTO_GAME_MODE, false)
         val raw = prefs.getString(PREF_KEY_CONFIG_JSON, null)
@@ -229,7 +229,7 @@ object ConfigManager {
                 moreClickAction = directMoreClickAction.takeIf { it != Int.MIN_VALUE } ?: migratedMoreClickAction,
                 milinkCardFeatures = directMilinkCardFeatures ?: config.milinkCardFeatures,
                 autoGameMode = directAutoGameMode ?: config.autoGameMode,
-                norootEnabled = directNorootEnabled,
+                norootEnabled = directNorootEnabled ?: config.norootEnabled,
             ).normalized()
         }
         return config.copy(
