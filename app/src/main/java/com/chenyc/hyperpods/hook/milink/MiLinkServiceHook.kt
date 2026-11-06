@@ -295,6 +295,7 @@ object MiLinkServiceHook : HookContext() {
                         intent.getStringArrayListExtra(HyperPodsAction.EXTRA_ANC_IDS)?.let { currentAncIds = it }
                         currentAncIndex = intent.getIntExtra(HyperPodsAction.EXTRA_STATUS, currentAncIndex)
                         currentAnc = oppoAncOfMoondrop(currentAncIds.getOrNull(currentAncIndex))
+                        Log.i(TAG, "ANC_CHANGED: ids=${currentAncIds.size} idx=$currentAncIndex anc=$currentAnc")
                         saveState(context)
                         notifyHeadsetPropertyChanged(lastAncBatteryController, currentBluetoothDevice(), 10)
                     }
@@ -344,8 +345,21 @@ object MiLinkServiceHook : HookContext() {
         return false
     }
 
+    @Volatile private var lastLoggedAnc = Int.MIN_VALUE
+
     private fun miLinkAncState(): Int {
         loadState()
+        val out = miLinkAncStateInner()
+        // 诊断：MIUI 每次调用 getAncState 只在新值时才打一行 ——
+        // 切降噪后没有新日志 = MIUI 没重新读取（需要我们主动推刷新）；有日志但卡片没变 = 回值不对。
+        if (out != lastLoggedAnc) {
+            lastLoggedAnc = out
+            Log.i(TAG, "getAncState -> $out (ids=${currentAncIds.size}, idx=$currentAncIndex, brand=$currentBrand)")
+        }
+        return out
+    }
+
+    private fun miLinkAncStateInner(): Int {
         // 水月雨按自己的家族口径回答。共用字段那套 1/2/3/4 编码里没有「抗风噪」，
         // 直接套会把抗风噪显示成通透、把自适应显示成关闭 —— 小窗上就是「降噪不见了」。
         if (currentBrand == PodBrand.MOONDROP) {
