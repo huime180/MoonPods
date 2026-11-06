@@ -132,6 +132,8 @@ object NorootNotification {
      * @param trigger 本次发布对应的「显示时机」下标（见 ConfigManager.ISLAND_SHOW_TIMING_*）；
      *   为 null 时按常驻通知处理（不触发额外的岛展示）。
      */
+    @Volatile private var lastSimpleText: String? = null
+
     fun postSimple(context: Context, snapshot: PodSnapshot, trigger: Int? = null) {
         runCatching {
             val nm = context.getSystemService(android.app.NotificationManager::class.java) ?: return
@@ -156,6 +158,10 @@ object NorootNotification {
                 if (b.right > 0) { if (isNotEmpty()) append("  "); append("右 ${b.right}%") }
                 if (b.case > 0) { if (isNotEmpty()) append("  "); append("盒 ${b.case}%") }
             }.ifEmpty { context.getString(R.string.noroot_connected) }
+            // 内容没变就不再重复 notify：否则一次状态刷新会连发十几条，通知栏闪烁
+            val rendered = title + "\n" + text
+            if (rendered == lastSimpleText) return
+            lastSimpleText = rendered
             val title = snapshot.deviceName.ifBlank { snapshot.modelName.ifBlank { "MOONDROP" } }
             val disconnectTarget = PendingIntent.getBroadcast(
                 context,
@@ -245,6 +251,7 @@ object NorootNotification {
         runCatching { nm.cancel(NOTIFICATION_ID) }
         posted = false
         lastRendered = null
+        lastSimpleText = null
     }
 
     fun cancel(context: Context) {
