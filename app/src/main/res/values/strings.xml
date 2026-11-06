@@ -126,6 +126,16 @@
     <string name="noroot_label_case">Case </string>
     <string name="noroot_label_left">Left </string>
     <string name="noroot_label_right">Right </string>
+    <string name="notification_disconnect">Disconnect</string>
+    <string name="notification_channel_status">Earbuds status</string>
+    <string name="notification_channel_status_desc">Connection and battery status of your earbuds</string>
+    <string name="unknown_model">Unknown model</string>
+    <string name="batt_unknown">Battery unknown</string>
+    <string name="batt_whole">Battery</string>
+    <string name="batt_left">Left</string>
+    <string name="batt_right">Right</string>
+    <string name="batt_case">Case</string>
+    <string name="battery_offline">offline</string>
     <string name="noroot_channel_name">Earbuds status</string>
     <string name="work_mode">Work mode</string>\n    <string name="work_mode_summary">Root: hook MIUI system apps for a native-like experience\nNo root: the app connects the earbuds itself (own notification)</string>\n    <string name="work_mode_root">Root (hook)</string>\n    <string name="work_mode_noroot">No root</string>\n    <string name="focus_notification">Focus notification</string>
     <string name="focus_notification_summary">Create the earphone notification; turn off to hide it completely</string>

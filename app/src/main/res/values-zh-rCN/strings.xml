@@ -127,6 +127,16 @@
     <string name="noroot_label_case">盒 </string>
     <string name="noroot_label_left">左 </string>
     <string name="noroot_label_right">右 </string>
+    <string name="notification_disconnect">断开连接</string>
+    <string name="notification_channel_status">耳机状态</string>
+    <string name="notification_channel_status_desc">耳机的连接与电量状态</string>
+    <string name="unknown_model">未知型号</string>
+    <string name="batt_unknown">电量未知</string>
+    <string name="batt_whole">电量</string>
+    <string name="batt_left">左</string>
+    <string name="batt_right">右</string>
+    <string name="batt_case">盒</string>
+    <string name="battery_offline">离线</string>
     <string name="noroot_channel_name">耳机状态</string>
     <string name="work_mode">工作模式</string>\n    <string name="work_mode_summary">Root：hook 小米系统应用，复刻原生耳机体验\n免 root：应用自己连耳机（自带通知）</string>\n    <string name="work_mode_root">Root（hook）</string>\n    <string name="work_mode_noroot">免 root</string>\n    <string name="focus_notification">焦点通知</string>
     <string name="focus_notification_summary">创建耳机通知；关闭后完全不显示</string>
