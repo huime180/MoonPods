@@ -103,6 +103,27 @@ object NorootBridge : PodListener {
                 MoonPodsAction.REQUEST_GESTURE,
             ).forEach { addAction(it) }
         }
+        // 运行期补充监听：静态接收器在部分 ROM 上收不到 A2DP 状态广播，
+        // 这里再按 ACL 连接事件兜底（进程已在时也要能自动连上）。
+        runCatching {
+            ctx.registerReceiver(object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    if (intent?.action != BluetoothDevice.ACTION_ACL_CONNECTED) return
+                    if (moe.huime.moonpods.config.ConfigManager.workMode() !=
+                        moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT
+                    ) return
+                    val device = runCatching {
+                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+                    }.getOrNull() ?: return
+                    val name = runCatching { device.name ?: device.alias }.getOrNull()
+                    if (MoondropLink.sniffModel(name) == null) return
+                    if (!MoondropLink.isInitialized() || !MoondropLink.snapshot().connected) {
+                        connect(ctx, device)
+                    }
+                }
+            }, IntentFilter().apply { addAction(BluetoothDevice.ACTION_ACL_CONNECTED) }, android.content.Context.RECEIVER_EXPORTED)
+        }.onFailure { Log.w(TAG, "acl receiver register failed", it) }
+
         ctx.registerReceiver(object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 val action = intent?.action ?: return
