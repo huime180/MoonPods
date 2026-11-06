@@ -202,7 +202,7 @@ object NorootBridge : PodListener {
         // 通知先发：广播链路任何一环抛异常都不该让通知丢失（之前就是这个顺序问题）
         runCatching {
             Log.i(TAG, "request notification: ${snap.deviceName} ${snap.battery.left}/${snap.battery.right}")
-            NorootNotification.post(appContext ?: return, snap)
+            NorootNotification.postSimple(appContext ?: return, snap)
         }.onFailure { Log.w(TAG, "notification post failed", it) }
         runCatching { broadcastState(snap) }
             .onFailure { Log.w(TAG, "state broadcast failed", it) }

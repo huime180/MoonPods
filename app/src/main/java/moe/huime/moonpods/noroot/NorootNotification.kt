@@ -122,6 +122,43 @@ object NorootNotification {
      * 这是 ControlBridge 事件转发器唯一的通知入口：拿到的快照就是 MoondropLink 的真实状态，
      * 不在这里二次判断「连接与否」以外的东西。
      */
+    /**
+     * 直接发一条状态通知（不经过协程/去重管线）。
+     *
+     * 移植版的异步管线在当前 ROM 上没有落地，这条作为确定性入口：
+     * 建通道 → notify，失败只记日志。内容与 Root 模式一致（机型 + 左右电量 + 断开）。
+     */
+    fun postSimple(context: Context, snapshot: PodSnapshot) {
+        runCatching {
+            val nm = context.getSystemService(android.app.NotificationManager::class.java) ?: return
+            if (runCatching { nm.getNotificationChannel(CHANNEL_ID) }.getOrNull() == null) {
+                nm.createNotificationChannel(
+                    android.app.NotificationChannel(
+                        CHANNEL_ID,
+                        context.getString(R.string.notification_channel_status),
+                        android.app.NotificationManager.IMPORTANCE_DEFAULT,
+                    ).apply { description = context.getString(R.string.notification_channel_status_desc) }
+                )
+            }
+            val b = snapshot.battery
+            val text = buildString {
+                if (b.leftKnown) append("L ${b.left}%")
+                if (b.rightKnown) append(if (isEmpty()) "R ${b.right}%" else "  R ${b.right}%")
+                if (b.caseKnown) append("  C ${b.case}%")
+            }.ifEmpty { context.getString(R.string.noroot_connected) }
+            val title = snapshot.deviceName.ifBlank { snapshot.modelName.ifBlank { "MOONDROP" } }
+            val builder = android.app.Notification.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_anc)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setContentIntent(contentIntent(context))
+            nm.notify(NOTIFICATION_ID, builder.build())
+            Log.i(TAG, "postSimple: $title / $text")
+        }.onFailure { Log.w(TAG, "postSimple failed", it) }
+    }
+
     /** 兼容 bridge 的调用名。 */
     fun post(context: Context, snapshot: PodSnapshot) = onSnapshot(context, snapshot)
 
