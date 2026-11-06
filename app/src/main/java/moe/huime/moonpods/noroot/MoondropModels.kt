@@ -367,7 +367,11 @@ object MoondropModels {
                 deviceName,
             )
         }
-        if (n.contains("MOONDROP") || n.contains("水月雨")) return FALLBACK
+        // 名称以 MOONDROP 开头但目录里没有 → 视为新设备，请求一次拉取；不做通用兜底
+        if (n.startsWith("MOONDROP")) {
+            RootMoondropCatalog.refreshForUnknownDevice()
+            return null
+        }
         return null
     }
 

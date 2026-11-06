@@ -42,8 +42,21 @@ object PodCatalog {
      *
      * OPPO 支持已移除，这里不再有宽匹配分支，避免「任意蓝牙耳机被误接管」。
      */
-    fun brandOf(deviceName: String?, mac: String? = null): PodBrand? =
-        if (moondropModelOf(deviceName, mac) != null) PodBrand.MOONDROP else null
+    fun brandOf(deviceName: String?, mac: String? = null): PodBrand? {
+        if (moondropModelOf(deviceName, mac) != null) return PodBrand.MOONDROP
+        // 兜底：云端目录还没加载（或被注入进程拿不到网络）时，型号表是空的，
+        // 仅靠 match() 会把水月雨耳机判成「不认识」而直接放弃连接 —— 这里按名称兜底。
+        val name = deviceName?.trim().orEmpty()
+        if (name.isEmpty()) return null
+        // 已写死协议层的机型（布丁）不依赖云端目录
+        if (name.uppercase().contains("PUDDING")) return PodBrand.MOONDROP
+        // 只有「名称以 MOONDROP 开头、且当前目录里没有这台」才视为新设备并触发一次拉取
+        if (name.uppercase().startsWith("MOONDROP")) {
+            moe.huime.moonpods.pods.moondrop.MoondropCatalog.refreshForUnknownDevice()
+            return null
+        }
+        return null
+    }
 
     /** 水月雨名称兜底判定（走型号档案，不做 `contains` 宽匹配）。 */
     fun isMoondropName(deviceName: String?): Boolean = moondropModelOf(deviceName) != null

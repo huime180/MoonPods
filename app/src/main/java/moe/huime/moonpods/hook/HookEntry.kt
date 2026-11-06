@@ -28,6 +28,10 @@ class HookEntry : XposedModule() {
                 loadHook(MiBluetoothToastHook, param.defaultClassLoader, param.packageName)
                 loadHook(BluetoothUpstreamHeadsetHook(), param.defaultClassLoader, param.packageName)
             }
+            // 水月雨官方 App：只做设备身份读取的观测（后续用于模拟设备拉取配置）
+            "com.moondroplab.moondrop.moondrop_app" -> {
+                loadHook(OfficialAppProbeHook(), param.defaultClassLoader, param.packageName)
+            }
             // 小米设置里的耳机详情页：视图级适配（参考 Konakonai/Edge2Pods）
             "com.android.settings" -> {
                 loadHook(SettingsHeadsetHook(), param.defaultClassLoader, param.packageName)

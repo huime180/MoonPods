@@ -38,6 +38,8 @@ object ConfigManager {
     const val PREF_KEY_AUTO_GAME_MODE = "auto_game_mode"
     const val PREF_KEY_WORK_MODE = "work_mode"
     const val PREF_KEY_CONNECT_POPUP = "connect_popup"
+    const val PREF_KEY_CATALOG_JSON = "catalog_json"
+    const val PREF_KEY_OFFICIAL_FUNCS = "official_functions_json"
     const val PREF_KEY_FOCUS_NOTIFICATION = "focus_notification"
     const val DEFAULT_FAKE_DEVICE_ID = "01010607"
     const val LOG_LEVEL_OFF = 0
@@ -81,7 +83,43 @@ object ConfigManager {
     @Volatile
     private var cachedConfig: AppConfig = AppConfig()
 
+    @Volatile private var prefsHolder: SharedPreferences? = null
+
+    /** 目录缓存：跨进程共享（模块的 remote prefs），用于被注入进程加载不到网络时兜底。 */
+    fun catalogJson(): String? = runCatching { prefsHolder?.getString(PREF_KEY_CATALOG_JSON, null) }.getOrNull()
+
+    /** 官方 App 的「机型 UUID → 功能 uri 列表」缓存（JSON）。 */
+    fun officialFunctions(): Map<String, List<String>> = runCatching {
+        val raw = prefsHolder?.getString(PREF_KEY_OFFICIAL_FUNCS, null) ?: return emptyMap()
+        val obj = org.json.JSONObject(raw)
+        buildMap {
+            obj.keys().forEach { uuid ->
+                val arr = obj.optJSONArray(uuid) ?: return@forEach
+                put(uuid, buildList { for (i in 0 until arr.length()) add(arr.getString(i)) })
+            }
+        }
+    }.getOrDefault(emptyMap())
+
+    fun updateOfficialFunctions(map: Map<String, List<String>>) {
+        runCatching {
+            val obj = org.json.JSONObject()
+            map.forEach { (uuid, uris) -> obj.put(uuid, org.json.JSONArray(uris)) }
+            prefsHolder?.edit()?.putString(PREF_KEY_OFFICIAL_FUNCS, obj.toString())?.apply()
+        }
+    }
+
+    fun updateCatalogJson(json: String) {
+        runCatching { prefsHolder?.edit()?.putString(PREF_KEY_CATALOG_JSON, json)?.apply() }
+    }
+
+    /** 立即从当前 prefs 重读（remote prefs 可能滞后，模式判断前调用）。 */
+    fun refreshNow() {
+        val p = prefsHolder ?: return
+        runCatching { cachedConfig = readConfig(p, "refreshNow") }
+    }
+
     fun init(prefs: SharedPreferences) {
+        prefsHolder = prefs
         val oldConfig = cachedConfig
         cachedConfig = readConfig(prefs, "init")
         logConfigChange("init", oldConfig, cachedConfig)
@@ -122,6 +160,14 @@ object ConfigManager {
     fun workMode(): Int = current().workMode.coerceIn(WORK_MODE_NOROOT, WORK_MODE_ROOT)
 
     fun focusNotification(): Boolean = current().focusNotification
+
+    /** 被注入进程用：remote prefs 可能滞后，读之前先刷新一次。 */
+    fun focusNotificationFresh(): Boolean {
+        val override = FocusNotificationBridge.override
+        if (override != FocusNotificationBridge.UNSET) return override == 1
+        refreshNow()
+        return focusNotification()
+    }
 
     fun fakeSupport(): String = "${fakeDeviceId()},000000000000000010000000"
 

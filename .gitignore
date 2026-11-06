@@ -34,3 +34,4 @@ opencode.json
 *.p12
 /keystore.properties
 /signing.properties
+tools/out/

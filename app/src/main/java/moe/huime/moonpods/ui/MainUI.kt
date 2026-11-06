@@ -786,6 +786,8 @@ fun MainUI(
             connectedDeviceAddress = ""
             mainTitle.value = ""
         }
+        // 页面上的「断开」与通知里的按钮语义一致：断开系统蓝牙连接（不只是模块链路）
+        moe.huime.moonpods.utils.BluetoothDisconnector.disconnect(context, device.address)
         Intent(MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST).apply {
             putExtra("device", device)
             setPackage(if (moe.huime.moonpods.config.ConfigManager.workMode() == moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT) moe.huime.moonpods.BuildConfig.APPLICATION_ID else "com.android.bluetooth")
@@ -922,6 +924,18 @@ fun MainUI(
     // OPPO 专属设置二级页的写入回调：写盘 + 跨进程通知。
     // 提成局部 val 而不是内联进 entryProvider，是为了让「设置项怎么落盘」只有一处实现。
     val handleConnectPopupChange: (Int) -> Unit = { style ->
+        // 模块弹窗依赖「显示在其他应用上层」：未授权时立刻引导用户打开，
+        // 否则连接时 Activity 会被系统 BAL 策略拒绝（表现就是"弹窗没出来"）。
+        if (style != ConfigManager.CONNECT_POPUP_NONE && !android.provider.Settings.canDrawOverlays(context)) {
+            runCatching {
+                context.startActivity(
+                    Intent(
+                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        android.net.Uri.parse("package:" + context.packageName),
+                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
+        }
         connectPopup.value = style
         ConfigManager.updateConnectPopup(prefs, xposedService, style)
         listOf("com.android.bluetooth", "com.xiaomi.bluetooth", "com.milink.service").forEach { pkg ->
@@ -931,20 +945,27 @@ fun MainUI(
 
     val handleWorkModeChange: (Int) -> Unit = { mode ->
         workMode.value = mode
-        ConfigManager.updateWorkMode(prefs, xposedService, mode)
-        listOf("com.android.bluetooth", "com.xiaomi.bluetooth", "com.milink.service").forEach { pkg ->
-            broadcastConfigChanged(context, pkg)
-        }
+        // 全部编排交给 ModeSwitcher（断链路 → 撤通知 → 写配置 → 广播 → 重启作用域 → 重启应用）。
+        // 这里不再重复写配置或发广播，避免同一动作执行两次。
+        moe.huime.moonpods.utils.ModeSwitcher.switchTo(context, mode)
     }
 
     val handleFocusNotificationChange: (Boolean) -> Unit = { enabled ->
         focusNotification.value = enabled
+        // 显式同步给被注入进程（remote prefs 会滞后）
+        listOf("com.android.bluetooth", "com.xiaomi.bluetooth", "com.milink.service").forEach { pkg ->
+            context.sendBroadcast(Intent(MoonPodsAction.SET_FOCUS_NOTIFICATION).apply {
+                setPackage(pkg)
+                putExtra("enabled", enabled)
+                addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+            })
+        }
         // 同一开关同时控制 Root 与免 root：
         //  Root 的 hook 读设置后自行停发/撤掉 MIUI 通知；
         //  免 root 的通知在应用进程，这里立刻生效，不必等下一次状态事件。
         runCatching {
             if (!enabled) {
-                moe.huime.moonpods.noroot.NorootNotification.cancel(context)
+                moe.huime.moonpods.noroot.NorootNotification.cancelImmediate(context)
                 // Root 模式：让小米蓝牙进程撤掉它那条通知
                 context.sendBroadcast(Intent(MoonPodsAction.CANCEL_PODS_NOTIFICATION).apply {
                     setPackage("com.xiaomi.bluetooth")

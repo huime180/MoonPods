@@ -142,10 +142,15 @@ object NorootNotification {
                 )
             }
             val b = snapshot.battery
+            val offline = context.getString(R.string.battery_offline)
+            // 0% 就是离线：电量为 0 的耳机不可能还在线，无需区分「不在位」与「耗尽」
+            fun part(label: String, level: Int, present: Boolean): String? =
+                if (level <= 0) "$label $offline" else "$label $level%"
+            // 文案与小米原生耳机通知保持一致：只列在线的耳，写成「左100% 右100%」
             val text = buildString {
-                if (b.leftKnown) append("L ${b.left}%")
-                if (b.rightKnown) append(if (isEmpty()) "R ${b.right}%" else "  R ${b.right}%")
-                if (b.caseKnown) append("  C ${b.case}%")
+                if (b.left > 0) append("左 ${b.left}%")
+                if (b.right > 0) { if (isNotEmpty()) append("  "); append("右 ${b.right}%") }
+                if (b.case > 0) { if (isNotEmpty()) append("  "); append("盒 ${b.case}%") }
             }.ifEmpty { context.getString(R.string.noroot_connected) }
             val title = snapshot.deviceName.ifBlank { snapshot.modelName.ifBlank { "MOONDROP" } }
             val disconnectTarget = PendingIntent.getBroadcast(
@@ -161,7 +166,17 @@ object NorootNotification {
                     titleText = title,
                     contentText = text,
                     aodText = text,
-                    boxBitmap = null,
+                    // 与 Root 模式保持一致：用用户为该设备设置的机型图（没有则回退 img_box）
+                    boxBitmap = runCatching {
+                        moe.huime.moonpods.utils.PodImageLoader.loadBoxBitmap(
+                            context,
+                            context.getSharedPreferences(
+                                moe.huime.moonpods.config.ConfigManager.PREFS_NAME,
+                                Context.MODE_PRIVATE,
+                            ),
+                            snapshot.deviceAddress,
+                        )
+                    }.getOrNull(),
                     disconnectIntent = disconnectTarget,
                     disconnectLabel = context.getString(R.string.notification_disconnect),
                 )
@@ -175,8 +190,6 @@ object NorootNotification {
                 // 免 root 通知跟随链路生命周期：进程结束/断开后可被系统回收，不常驻
                 .setOngoing(false)
                 .setAutoCancel(true)
-                // 兜底：即使进程被回收、收不到断开事件，也不会无限期残留
-                .setTimeoutAfter(15 * 60 * 1000L)
                 .setContentIntent(contentIntent(context))
                 .apply { focusExtras?.let { addExtras(it) } }
             nm.notify(NOTIFICATION_ID, builder.build())
@@ -210,6 +223,21 @@ object NorootNotification {
     }
 
     /** 断开连接时调用：撤掉自己那条。 */
+    /**
+     * 同步撤销：供广播接收器、模式切换等「进程随时可能被回收」的路径使用。
+     *
+     * 异步版本（[cancel]）依赖协程调度，静态接收器里 onReceive 返回后进程就可能被杀，
+     * 撤销没来得及执行 —— 表现就是「断开蓝牙后通知还在」。
+     */
+    fun cancelImmediate(context: Context) {
+        val nm = runCatching {
+            context.applicationContext.getSystemService(android.app.NotificationManager::class.java)
+        }.getOrNull() ?: return
+        runCatching { nm.cancel(NOTIFICATION_ID) }
+        posted = false
+        lastRendered = null
+    }
+
     fun cancel(context: Context) {
         val app = context.applicationContext
         scope.launch {
@@ -475,6 +503,8 @@ object NorootNotification {
     /** 标题 = 设备名（取不到就型号名，再取不到用仓库既有的「水月雨耳机」占位串）。 */
     private fun titleOf(context: Context, snapshot: PodSnapshot): String =
         snapshot.deviceName.ifBlank { snapshot.modelName }
+            // 型号没解析出来时不要显示「未知设备」：用地址末段区分，至少让用户知道连的是哪台
+            .ifBlank { snapshot.deviceAddress.takeLast(5) }
             .ifBlank { context.getString(R.string.unknown_model) }
 
     /**
@@ -527,10 +557,16 @@ object NorootNotification {
      *
      * @param level [BatterySnapshot] 的 left / right / case（-1 = 无数据）
      */
-    private fun batteryPart(context: Context, labelRes: Int, level: Int, charging: Boolean): String? {
+    private fun batteryPart(
+        context: Context,
+        labelRes: Int,
+        level: Int,
+        charging: Boolean,
+        present: Boolean = true,
+    ): String? {
         val label = context.getString(labelRes)
-        if (level < 0) return null
-        if (level == 0) return "$label " + context.getString(R.string.battery_offline)
+        // 有些固件对不在位的耳回报 0：以 present 为准判定离线，避免显示 0%
+        if (level <= 0) return "$label " + context.getString(R.string.battery_offline)
         val mark = if (charging) " ⚡" else ""
         return "$label $level %$mark"
     }

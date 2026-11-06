@@ -370,11 +370,38 @@ object MoondropModelRegistry {
                 // 云端识别出的型号：套用实测校准（没有校准的走能力探测默认值）
                 anc = calibrationFor(entry.key).first,
                 dc = calibrationFor(entry.key).second,
-                features = FeatureProfile(),
+                features = featuresFromOfficial(entry.uuid),
                 note = "官方云端机型目录命中（products/all / ota-configs/all）；" +
-                    "功能一律按连接后的能力探测决定，不做型号级猜测。",
+                    "功能清单来自官方 App 的机型缓存（cachedDeviceFunc），" +
+                    "连接后仍以能力探测为准。",
             )
         }
+
+    /**
+     * 官方 App 缓存的功能 uri → 我们的 FeatureProfile。
+     *
+     * 来源：OfficialCapabilitySource（读取官方 App 的
+     * `cachedDeviceFunc_<产品UUID>_<固件版本>`），按产品 UUID 关联。
+     * 没有缓存时返回默认档案，行为与之前一致。
+     */
+    private fun featuresFromOfficial(uuid: String?): FeatureProfile {
+        val uris = moe.huime.moonpods.pods.moondrop.OfficialCapabilitySource.functionsFor(uuid)
+        if (uris.isEmpty()) return FeatureProfile()
+        fun has(name: String) = uris.any { it.endsWith("/$name") }
+        return FeatureProfile(
+            promptTone = has("prompttoneswitch") || has("prompttone"),
+            promptVolume = has("voiceswitch"),
+            lhdc = has("lhdc") || has("codec"),
+            dualConnection = has("onebringtwoV2") || has("onebringtwo"),
+        )
+    }
+
+    /** 该匹配键是否有内置实测校准（供能力表统计）。 */
+    fun hasCalibration(key: String?): Boolean {
+        if (key.isNullOrBlank()) return false
+        val (anc, _) = calibrationFor(key)
+        return anc != null
+    }
 
     /** 是否为本模块接管的设备。 */
     fun isMoondrop(deviceName: String?): Boolean = match(deviceName) != null

@@ -37,7 +37,45 @@ object MiBluetoothToastHook : HookContext() {
     private var notificationReceiverRegistered = false
     private var lastOfficialIslandShape: Triple<Boolean, Boolean, Boolean>? = null
 
+    @SuppressLint("WrongConstant")
+    @Volatile private var switchReceiverRegistered = false
+
+    /**
+     * 注册开关同步接收器（只注册一次）。
+     *
+     * 被注入进程读 remote prefs 会滞后，应用侧切换「焦点通知」时发的显式广播
+     * 是唯一能立即生效的通道；此前只有 com.android.bluetooth 注册了接收器，
+     * 本进程（com.xiaomi.bluetooth，真正发通知的那个）收不到。
+     */
+    private fun ensureSwitchReceiver(context: Context) {
+        if (switchReceiverRegistered) return
+        switchReceiverRegistered = true
+        runCatching {
+            context.applicationContext.registerReceiver(object : BroadcastReceiver() {
+                override fun onReceive(ctx: Context?, intent: Intent?) {
+                    when (intent?.action) {
+                        MoonPodsAction.SET_FOCUS_NOTIFICATION ->
+                            moe.huime.moonpods.config.FocusNotificationBridge.set(intent.getBooleanExtra("enabled", true))
+                        MoonPodsAction.SET_WORK_MODE -> {
+                            val mode = intent.getIntExtra("mode", -1)
+                            if (mode >= 0) moe.huime.moonpods.pods.WorkModeBridge.override = mode
+                        }
+                    }
+                }
+            }, IntentFilter().apply {
+                addAction(MoonPodsAction.SET_FOCUS_NOTIFICATION)
+                addAction(MoonPodsAction.SET_WORK_MODE)
+            }, Context.RECEIVER_EXPORTED)
+            Log.i("HyperPods", "switch receiver registered (xiaomi.bluetooth)")
+        }.onFailure { Log.w("HyperPods", "switch receiver register failed", it) }
+    }
+
     override fun onHook() {
+        // 免 root 模式：系统应用保持原样，不做任何 hook（重启作用域后即恢复）
+        if (moe.huime.moonpods.pods.WorkModeBridge.isNoRoot()) {
+            Log.i("HyperPods", "no-root mode: skip MiBluetoothToastHook")
+            return
+        }
 
         // 焦点通知总开关不再决定「是否挂钩」：关掉时要能撤掉已有通知、打开时要能立刻恢复，
         // 因此挂钩始终生效，开关在每次更新通知时判断。
@@ -48,8 +86,20 @@ object MiBluetoothToastHook : HookContext() {
             return PendingIntent.getBroadcast(context, 0, intent, 201326592)
         }
 
-        @SuppressLint("WrongConstant")
         fun createPodsNotification(bluetoothDevice: BluetoothDevice?, context: Context, batteryParams: BatteryParams) {
+            // 开关同步：本进程需要自己接收广播（remote prefs 会滞后）
+            ensureSwitchReceiver(context)
+            // 焦点通知总开关：关闭时不再创建/刷新小米侧通知（并撤掉已有的一条）。
+            // 这里读的是**刷新后的**配置 —— 被注入进程的 remote prefs 会滞后，
+            // 用缓存值会出现「设置里关了、通知照样出现」。
+            if (!ConfigManager.focusNotificationFresh()) {
+                runCatching {
+                    android.app.NotificationManager::class.java
+                        .let { context.getSystemService(it) }
+                        ?.cancel(10004)
+                }
+                return
+            }
             // 连接弹窗：模块弹窗两种模式都支持（Root 侧由本进程拉起应用弹窗）
             runCatching {
                 if (ConfigManager.connectPopup() == ConfigManager.CONNECT_POPUP_MODULE &&

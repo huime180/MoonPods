@@ -248,7 +248,11 @@ internal fun MainTabsScaffold(
                         spatialAudioSupported = spatialAudioSupported,
                         spatialSoundSupported = spatialSoundSupported,
                         adaptiveModeEnabled = adaptiveModeEnabled,
-                        boxImagePath = currentEarphonePref?.boxImagePath,
+                        // 按当前在线的那只耳选图：单耳用单耳图，双耳用整机图
+                        boxImagePath = moe.huime.moonpods.utils.PodImageSelector.choose(
+                            currentEarphonePref,
+                            displayBattery,
+                        ),
                         connectedDeviceAddress = connectedDeviceAddress,
                         connectingDeviceAddress = connectingDeviceAddress,
                         showConnectErrorDialog = showConnectErrorDialog,

@@ -73,8 +73,17 @@ data class BatterySnapshot(
     val caseCharging: Boolean = false,
     /** 设备是否采用「单设备电量」形态（type 0） */
     val singleDevice: Boolean = false,
+    /**
+     * 该路本轮是否真的出现过读数。
+     *
+     * 有些固件对「不在位的耳」回报 0 而不是 0xFF，仅看数值会把「未佩戴/不在位」
+     * 误判成 0%，所以离线判定必须用这个标记，而不是数值本身。
+     */
+    val leftPresent: Boolean = false,
+    val rightPresent: Boolean = false,
+    val casePresent: Boolean = false,
 ) {
-    val leftKnown: Boolean get() = left != BATTERY_UNKNOWN
+    val leftKnown: Boolean get() = leftPresent || left != BATTERY_UNKNOWN
     val rightKnown: Boolean get() = right != BATTERY_UNKNOWN
     val caseKnown: Boolean get() = case != BATTERY_UNKNOWN
     val anyKnown: Boolean get() = leftKnown || rightKnown || caseKnown

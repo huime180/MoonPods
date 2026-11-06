@@ -265,8 +265,13 @@ private fun PopupContent(
     // gameMode 代码；低延迟开关这个模块不做，系统侧低延迟走系统蓝牙设置页），
     // 所以插水月雨时把这张卡藏掉 —— 否则按下去只会发一条没有接收方的 ACTION_GAME_MODE_SET。
     // 它**不是** HyperOS 蓝牙设置里的「低延迟模式」：那个是系统侧 A2DP 配置，与厂商协议无关。
+    // 能力广播到达前 mdAncIds 为空、型号也可能还没解析出来，
+    // 仅凭这两项判断会让水月雨设备先渲染成「通用耳机（带游戏模式）」的弹窗。
+    // 名称本身已能确认品牌，先按水月雨渲染，能力到达后再自然收敛。
     val isMoondrop = mdAncIds.value.isNotEmpty() ||
-        MoondropModelRegistry.match(deviceName.value) != null
+        MoondropModelRegistry.match(deviceName.value) != null ||
+        deviceName.value.contains("MOONDROP", ignoreCase = true) ||
+        deviceName.value.contains("水月雨")
     remember { ConfigManager.refreshFromPrefs(prefs) }
     val capabilities = detectDeviceCapabilities(
         context = context,

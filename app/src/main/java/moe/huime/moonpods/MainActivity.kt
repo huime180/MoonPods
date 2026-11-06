@@ -23,8 +23,13 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 官方云端机型目录（与官方 APP 同源）：后台拉一次，失败无副作用
-        Thread { runCatching { moe.huime.moonpods.pods.moondrop.MoondropCatalog.refresh() } }.start()
+        // 后台准备两件事（都失败无副作用）：
+        //   1. 官方 App 缓存里的「机型 → 功能清单」（需要 root 读取其私有目录）
+        //   2. 官方云端机型目录（与官方 APP 同源）
+        Thread {
+            runCatching { moe.huime.moonpods.pods.moondrop.OfficialCapabilitySource.refresh(this) }
+            runCatching { moe.huime.moonpods.pods.moondrop.MoondropCatalog.ensureLoaded() }
+        }.start()
         super.onCreate(savedInstanceState)
 
         // 运行时权限：Android 12+ 的蓝牙连接/扫描（免 root 直连必需）、Android 13+ 的通知

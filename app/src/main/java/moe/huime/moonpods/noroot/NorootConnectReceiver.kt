@@ -22,9 +22,8 @@ class NorootConnectReceiver : BroadcastReceiver() {
         }.getOrNull() ?: return
         // 断开/关闭：撤掉应用自己那条通知（进程可能已被回收，靠静态广播兜底）
         if (state == BluetoothProfile.STATE_DISCONNECTED || state == BluetoothProfile.STATE_DISCONNECTING) {
-            if (NorootBridge.matchModel(runCatching { device.name ?: device.alias }.getOrNull()) != null) {
-                moe.huime.moonpods.noroot.NorootNotification.cancel(context.applicationContext)
-            }
+            // 无条件撤销：此处按型号匹配失败会把「已断开」的通知留在栏里
+            moe.huime.moonpods.noroot.NorootNotification.cancelImmediate(context.applicationContext)
             return
         }
         if (state != BluetoothProfile.STATE_CONNECTED) return

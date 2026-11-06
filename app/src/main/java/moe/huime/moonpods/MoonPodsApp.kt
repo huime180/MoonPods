@@ -12,6 +12,20 @@ class MoonPodsApp : Application(), XposedServiceHelper.OnServiceListener {
         super.onCreate()
         XposedServiceHelper.registerListener(this)
         // 免 root 模式：应用进程自己直连耳机。这里只初始化链路与广播桥，不起任何服务。
+        // 被注入进程没有网络权限：它们请求刷新时由应用进程代劳，结果写回共享 prefs
+        runCatching {
+            registerReceiver(object : android.content.BroadcastReceiver() {
+                override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+                    if (intent?.action != moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction.REFRESH_CATALOG) return
+                    Thread {
+                        runCatching { moe.huime.moonpods.pods.moondrop.MoondropCatalog.refresh(force = true) }
+                    }.start()
+                }
+            }, android.content.IntentFilter(
+                moe.huime.moonpods.utils.miuiStrongToast.data.MoonPodsAction.REFRESH_CATALOG
+            ), android.content.Context.RECEIVER_EXPORTED)
+        }
+
         runCatching {
             val prefs = getSharedPreferences(ConfigManager.PREFS_NAME, MODE_PRIVATE)
             ConfigManager.init(prefs)

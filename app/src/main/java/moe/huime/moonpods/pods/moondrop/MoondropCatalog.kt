@@ -51,12 +51,21 @@ object MoondropCatalog {
     private val SPACES_RE = Regex("""\s+""")
 
     /** 一条官方目录项：官方规范名 + 归一化匹配键（大写、去版本/区域后缀）+ 官方芯片族。 */
-    data class Entry(val name: String, val key: String, val chipRoot: String? = null)
+    data class Entry(
+        val name: String,
+        val key: String,
+        val chipRoot: String? = null,
+        /** 官方产品 UUID：用于关联官方 App 缓存里的功能清单 */
+        val uuid: String? = null,
+    )
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     @Volatile private var entries: List<Entry> = emptyList()
     @Volatile private var lastRefreshMs = 0L
+
+    /** 当前目录快照（供能力表等下游使用）。 */
+    fun entriesSnapshot(): List<Entry> = entries
 
     /** 目录是否已加载（含缓存）。 */
     val loaded: Boolean get() = entries.isNotEmpty()
@@ -68,12 +77,15 @@ object MoondropCatalog {
      */
     fun refresh(force: Boolean = false) {
         val now = System.currentTimeMillis()
-        if (!force && loaded && now - lastRefreshMs < 24 * 3600_000L) return
+        // 不再限制「24 小时内只拉一次」：拉取时机由调用方（首次启动 / 新的 MOONDROP 设备）决定，
+        // 这里只做 60 秒的在途去重，避免同一时刻重复发请求。
+        if (!force && now - lastRefreshMs < 60_000L) return
         runCatching { fetchAll() }
             .onSuccess { list ->
                 if (list.isNotEmpty()) {
                     entries = list
                     lastRefreshMs = now
+                    saveCache(list)
                     Log.i(TAG, "catalog loaded: ${list.size} entries")
                 }
             }
@@ -89,8 +101,70 @@ object MoondropCatalog {
      */
     fun ensureLoaded() {
         if (loaded) return
-        refresh(force = true)
+        // 被注入进程（com.android.bluetooth 等）没有网络权限，拉取必然失败 ——
+        // 先读应用进程写下的缓存，再尝试联网刷新。
+        loadCache()?.let {
+            entries = it
+            Log.i(TAG, "catalog from cache: ${it.size} entries")
+        }
+        if (!loaded) refresh(force = true)
     }
+
+    @Volatile private var lastUnknownRefreshMs = 0L
+
+    /**
+     * 检测到「名称像水月雨、但当前目录里没有这台」时请求一次刷新。
+     *
+     * 触发场景只有两个：
+     *   1. 首次启动且缓存为空（由 [ensureLoaded] 负责）；
+     *   2. 出现目录中不存在的 MOONDROP 设备（新机型）—— 本方法。
+     * 10 分钟内最多一次，避免用户反复插拔耳机时反复联网。
+     */
+    fun refreshForUnknownDevice() {
+        val now = System.currentTimeMillis()
+        if (now - lastUnknownRefreshMs < 10 * 60_000L) return
+        lastUnknownRefreshMs = now
+        runCatching {
+            Thread {
+                runCatching { refresh(force = true) }
+                    .onFailure { Log.w(TAG, "refresh for unknown device failed", it) }
+            }.start()
+        }
+    }
+
+    /** 目录写入模块的共享 prefs，跨进程可见。 */
+    private fun saveCache(list: List<Entry>) {
+        runCatching {
+            val arr = org.json.JSONArray()
+            list.forEach { e ->
+                arr.put(org.json.JSONObject().apply {
+                    put("name", e.name)
+                    put("key", e.key)
+                    put("chip", e.chipRoot ?: "")
+                    put("uuid", e.uuid ?: "")
+                })
+            }
+            moe.huime.moonpods.config.ConfigManager.updateCatalogJson(arr.toString())
+        }.onFailure { Log.w(TAG, "save catalog cache failed", it) }
+    }
+
+    private fun loadCache(): List<Entry>? = runCatching {
+        val raw = moe.huime.moonpods.config.ConfigManager.catalogJson() ?: return@runCatching null
+        val arr = org.json.JSONArray(raw)
+        buildList {
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                add(
+                    Entry(
+                        name = o.getString("name"),
+                        key = o.getString("key"),
+                        chipRoot = o.optString("chip").takeIf { it.isNotBlank() },
+                        uuid = o.optString("uuid").takeIf { it.isNotBlank() },
+                    )
+                )
+            }
+        }.takeIf { it.isNotEmpty() }
+    }.getOrNull()
 
     /**
      * 把设备名解析成官方规范名；未命中返回 null。
@@ -124,7 +198,7 @@ object MoondropCatalog {
             val chipRoot = o["appResourceRoot"]?.let { root ->
                 runCatching { root.jsonObject["uri"]?.jsonPrimitive?.content }.getOrNull()
             }
-            addEntry(out, o.string("name") ?: o.string("productName"), chipRoot)
+            addEntry(out, o.string("name") ?: o.string("productName"), chipRoot, o.string("uuid"))
         }
 
         // 2) OTA 配置目录：名称里带版本/区域后缀，归一化后即官方机型名（含拼写变体）
@@ -147,7 +221,12 @@ object MoondropCatalog {
      *   2. 都干净或都脏时，取更短的（去掉冗余后缀）。
      * 显示名统一去掉版本号（"Robin 1.3.0" → "Robin"、"U.C.T.S 1.3.0" → "U.C.T.S"）。
      */
-    private fun addEntry(out: MutableMap<String, Entry>, raw: String?, chipRoot: String? = null) {
+    private fun addEntry(
+        out: MutableMap<String, Entry>,
+        raw: String?,
+        chipRoot: String? = null,
+        uuid: String? = null
+    ) {
         val name = raw?.trim().orEmpty()
         if (name.length < 2) return
         val key = normalize(name)

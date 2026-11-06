@@ -150,18 +150,33 @@ object MoondropOfficialImages {
      */
     fun downloadImage(path: String): ByteArray? = runCatching {
         val bytes = httpGet(FILE_BASE + path.replace(" ", "%20")) ?: return@runCatching null
-        val isPng = bytes.size > 8 &&
-            bytes[0] == 0x89.toByte() &&
-            bytes[1] == 'P'.code.toByte() &&
-            bytes[2] == 'N'.code.toByte() &&
-            bytes[3] == 'G'.code.toByte()
-        if (isPng) {
+        if (isSupportedImage(bytes)) {
             bytes
         } else {
-            Log.w(TAG, "downloadImage: not a PNG ($path)")
+            Log.w(TAG, "downloadImage: unsupported image format ($path)")
             null
         }
     }.onFailure { Log.w(TAG, "downloadImage failed: $path", it) }.getOrNull()
+
+    /**
+     * 判断下载到的字节是否为可解码的图片。
+     *
+     * 官方图床并非全是 PNG：实测 104 张里有 5 张是 **WebP**（URL 后缀却仍是 .png，
+     * 例如 Echo-BP、MOONDROP Pill、Nekocake QBZ-191）。此前只认 PNG 魔数，
+     * 这几款就被判成「没有机型图」。这里改为 PNG / WebP / JPEG 都放行，
+     * 真正的解码交给 BitmapFactory（它原生支持 WebP）。
+     */
+    private fun isSupportedImage(bytes: ByteArray): Boolean {
+        if (bytes.size < 12) return false
+        val png = bytes[0] == 0x89.toByte() && bytes[1] == 'P'.code.toByte() &&
+            bytes[2] == 'N'.code.toByte() && bytes[3] == 'G'.code.toByte()
+        val jpeg = bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte()
+        val webp = bytes[0] == 'R'.code.toByte() && bytes[1] == 'I'.code.toByte() &&
+            bytes[2] == 'F'.code.toByte() && bytes[3] == 'F'.code.toByte() &&
+            bytes[8] == 'W'.code.toByte() && bytes[9] == 'E'.code.toByte() &&
+            bytes[10] == 'B'.code.toByte() && bytes[11] == 'P'.code.toByte()
+        return png || jpeg || webp
+    }
 
     /**
      * 展示名归一化：小写、去掉厂牌通用词、只留字母 / 数字 / 汉字。

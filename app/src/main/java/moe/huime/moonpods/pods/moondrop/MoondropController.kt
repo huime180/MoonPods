@@ -574,9 +574,7 @@ object MoondropController {
 
     fun connect(btDevice: BluetoothDevice, preferRfcomm: Boolean = false) {
         // 免 root 模式由应用进程直连，hook 侧不参与
-        if (moe.huime.moonpods.config.ConfigManager.workMode() ==
-            moe.huime.moonpods.config.ConfigManager.WORK_MODE_NOROOT
-        ) return
+        if (moe.huime.moonpods.pods.WorkModeBridge.isNoRoot()) return
         // 新会话：重置回落标记
         rfcommFallbackTried = false
         if (connected && device?.address == btDevice.address) return

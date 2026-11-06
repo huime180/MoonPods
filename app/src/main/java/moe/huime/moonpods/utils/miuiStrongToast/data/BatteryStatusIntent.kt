@@ -16,13 +16,13 @@ private const val KEY_CASE_CONNECTED = "case_connected"
 fun Intent.putBatteryStatus(status: BatteryParams, includeFlatExtras: Boolean = true) {
     putExtra(KEY_STATUS, status)
     if (!includeFlatExtras) return
-    putExtra(KEY_LEFT_BATTERY, status.left?.battery ?: 0)
+    putExtra(KEY_LEFT_BATTERY, status.left?.battery ?: -1)
     putExtra(KEY_LEFT_CHARGING, status.left?.isCharging == true)
     putExtra(KEY_LEFT_CONNECTED, status.left?.isConnected == true)
-    putExtra(KEY_RIGHT_BATTERY, status.right?.battery ?: 0)
+    putExtra(KEY_RIGHT_BATTERY, status.right?.battery ?: -1)
     putExtra(KEY_RIGHT_CHARGING, status.right?.isCharging == true)
     putExtra(KEY_RIGHT_CONNECTED, status.right?.isConnected == true)
-    putExtra(KEY_CASE_BATTERY, status.case?.battery ?: 0)
+    putExtra(KEY_CASE_BATTERY, status.case?.battery ?: -1)
     putExtra(KEY_CASE_CHARGING, status.case?.isCharging == true)
     putExtra(KEY_CASE_CONNECTED, status.case?.isConnected == true)
 }
@@ -41,19 +41,19 @@ private fun Intent.batteryStatusFromFlatExtras(): BatteryParams? {
     }
     return BatteryParams(
         left = PodParams(
-            getIntExtra(KEY_LEFT_BATTERY, 0),
+            getIntExtra(KEY_LEFT_BATTERY, -1),
             getBooleanExtra(KEY_LEFT_CHARGING, false),
             getBooleanExtra(KEY_LEFT_CONNECTED, false),
             0
         ),
         right = PodParams(
-            getIntExtra(KEY_RIGHT_BATTERY, 0),
+            getIntExtra(KEY_RIGHT_BATTERY, -1),
             getBooleanExtra(KEY_RIGHT_CHARGING, false),
             getBooleanExtra(KEY_RIGHT_CONNECTED, false),
             0
         ),
         case = PodParams(
-            getIntExtra(KEY_CASE_BATTERY, 0),
+            getIntExtra(KEY_CASE_BATTERY, -1),
             getBooleanExtra(KEY_CASE_CHARGING, false),
             getBooleanExtra(KEY_CASE_CONNECTED, false),
             0

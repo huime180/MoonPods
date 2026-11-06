@@ -190,7 +190,7 @@ object NorootBridge : PodListener {
                                 if (moe.huime.moonpods.config.ConfigManager.focusNotification()) {
                                     NorootNotification.postSimple(appContext ?: ctx, snap)
                                 } else {
-                                    NorootNotification.cancel(appContext ?: ctx)
+                                    NorootNotification.cancelImmediate(appContext ?: ctx)
                                 }
                             }
                             MoondropLink.refreshAll()
@@ -217,7 +217,12 @@ object NorootBridge : PodListener {
                             if (device != null) MoondropLink.connect(device)
                         }
                         MoonPodsAction.ACTION_DISCONNECT_POD_REQUEST,
-                        MoonPodsAction.NOROOT_DISCONNECT -> MoondropLink.disconnect()
+                        MoonPodsAction.NOROOT_DISCONNECT -> {
+                            // 语义统一为「断开蓝牙连接」：先让系统断开 A2DP，再收模块链路
+                            val addr = snapshot.value?.deviceAddress
+                            moe.huime.moonpods.utils.BluetoothDisconnector.disconnect(ctx, addr)
+                            MoondropLink.disconnect()
+                        }
                     }
                 }.onFailure { Log.w(TAG, "control $action failed", it) }
             }
@@ -268,7 +273,7 @@ object NorootBridge : PodListener {
             // 通知总开关与 Root 模式共用同一个设置项（焦点通知开关）
             val ctx = appContext ?: return
             if (!moe.huime.moonpods.config.ConfigManager.focusNotification()) {
-                NorootNotification.cancel(ctx)
+                NorootNotification.cancelImmediate(ctx)
             } else {
                 Log.i(TAG, "request notification: ${snap.deviceName} ${snap.battery.left}/${snap.battery.right}")
                 NorootNotification.postSimple(ctx, snap)
@@ -325,9 +330,9 @@ object NorootBridge : PodListener {
 
         send(MoonPodsAction.BATTERY_CHANGED) { i ->
             i.putExtra("status", BatteryParams(
-                left = PodParams(snap.battery.left, snap.battery.leftCharging, snap.battery.leftKnown),
-                right = PodParams(snap.battery.right, snap.battery.rightCharging, snap.battery.rightKnown),
-                case = PodParams(snap.battery.case, snap.battery.caseCharging, snap.battery.caseKnown),
+                left = PodParams(snap.battery.left, snap.battery.leftCharging, snap.battery.leftPresent),
+                right = PodParams(snap.battery.right, snap.battery.rightCharging, snap.battery.rightPresent),
+                case = PodParams(snap.battery.case, snap.battery.caseCharging, snap.battery.casePresent),
             ))
         }
 
@@ -427,6 +432,6 @@ object NorootBridge : PodListener {
             setPackage(BuildConfig.APPLICATION_ID)
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         })
-        NorootNotification.cancel(ctx)
+        NorootNotification.cancelImmediate(ctx)
     }
 }
