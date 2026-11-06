@@ -39,6 +39,7 @@ object ConfigManager {
     const val PREF_KEY_WORK_MODE = "work_mode"
     const val PREF_KEY_CONNECT_POPUP = "connect_popup"
     const val PREF_KEY_CATALOG_JSON = "catalog_json"
+    const val PREF_KEY_CAP_CACHE = "caps_cache_v1"
     const val PREF_KEY_OFFICIAL_FUNCS = "official_functions_json"
     const val PREF_KEY_FOCUS_NOTIFICATION = "focus_notification"
     const val DEFAULT_FAKE_DEVICE_ID = "01010607"
@@ -86,6 +87,14 @@ object ConfigManager {
     @Volatile private var prefsHolder: SharedPreferences? = null
 
     /** 目录缓存：跨进程共享（模块的 remote prefs），用于被注入进程加载不到网络时兜底。 */
+    /** 机型能力缓存（JSON：型号键 → 探测结果）。 */
+    fun capabilityCacheJson(): String? =
+        runCatching { prefsHolder?.getString(PREF_KEY_CAP_CACHE, null) }.getOrNull()
+
+    fun updateCapabilityCacheJson(json: String) {
+        runCatching { prefsHolder?.edit()?.putString(PREF_KEY_CAP_CACHE, json)?.apply() }
+    }
+
     fun catalogJson(): String? = runCatching { prefsHolder?.getString(PREF_KEY_CATALOG_JSON, null) }.getOrNull()
 
     /** 官方 App 的「机型 UUID → 功能 uri 列表」缓存（JSON）。 */

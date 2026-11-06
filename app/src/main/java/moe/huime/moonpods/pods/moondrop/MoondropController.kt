@@ -838,6 +838,13 @@ object MoondropController {
     // 连接后的初始化：探测能力 → 读取全量状态 → 起轮询
 
     private suspend fun afterConnected() {
+        // 先用上次的探测结果渲染（每台机型只需探测一次），探测随后再校正
+        val cacheKey = model.id
+        CapabilityCache.load(cacheKey)?.let { cached ->
+            capabilities = cached
+            Log.i(TAG, "capabilities from cache: ${cached.features.sorted()}")
+            publishConnected()
+        }
         // 先把 RFCOMM 封装和 GAIA 版本一起探测掉（版本探测帧同时用作封装探针）。
         runCatching { probeRfcommFraming() }
         probeCapabilities()
@@ -957,7 +964,7 @@ object MoondropController {
             // 手势：**只看能力位图**（Pudding 真机位图里确有 feature 22）；型号档案不参与判定
             hasGestures = MoondropGaia.F_TOUCHV2 in feats,
             probed = true,
-        )
+        ).also { CapabilityCache.save(model.id, it) }
         ancModes = model.anc?.modes ?: emptyList()
         publishCapabilities()
         Log.i(TAG, "capabilities: $capabilities")

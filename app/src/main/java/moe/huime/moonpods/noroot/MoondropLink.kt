@@ -562,6 +562,12 @@ object MoondropLink {
     // ══════════════════════════════════════════════════════════════════════
 
     private suspend fun afterConnected() {
+        // 先用上次探测结果渲染（每台机型只探测一次）
+        val cacheKey = model.id
+        moe.huime.moonpods.pods.moondrop.CapabilityCache.load(cacheKey)?.let { cached ->
+            capabilities = cached
+            Log.i(TAG, "capabilities from cache: ${cached.features.sorted()}")
+        }
         emitState()
         // 先把 RFCOMM 封装和 GAIA 版本一起探测掉（版本探测帧同时用作封装探针）。
         runCatching { probeRfcommFraming() }
@@ -660,7 +666,7 @@ object MoondropLink {
             hasGestures = MoondropGaia.F_TOUCHV2 in feats,
             hasLowLatency = model.features.lowLatency,
             probed = true,
-        )
+        ).also { moe.huime.moonpods.pods.moondrop.CapabilityCache.save(model.id, it) }
         ancModes = model.anc?.modes ?: emptyList()
         emit(PodEvent.CapabilitiesChanged(capabilities))
         Log.i(TAG, "capabilities: $capabilities")
