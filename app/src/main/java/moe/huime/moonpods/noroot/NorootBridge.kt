@@ -165,6 +165,15 @@ object NorootBridge : PodListener {
             // 连上后把全部功能读一遍：快照里 gain/led/prompt/lhdc/dual 读到之前是 null，
             // 不读的话界面就只有降噪一个控件。
             runCatching { MoondropLink.refreshAll() }
+            // refreshAll 是异步读：等它把增益/指示灯/提示音/LHDC/双设备读回来之后，
+            // 再补发一次完整状态，否则界面只有降噪一项、通知也只有电量。
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                val latest = runCatching { MoondropLink.snapshot() }.getOrNull()
+                if (latest?.connected == true) {
+                    lastBroadcast = null
+                    broadcastState(latest)
+                }
+            }, 2000L)
             maybeShowPopup()
         }
     }

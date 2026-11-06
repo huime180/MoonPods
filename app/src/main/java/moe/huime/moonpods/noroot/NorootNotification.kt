@@ -76,6 +76,9 @@ object NorootNotification {
      */
     private const val LEGACY_ISLAND_CHANNEL_ID = "hyperpods_moondrop_island"
 
+    /** 早前版本用过的通道 id（「免 root 状态」/「耳机状态」两次改名），升级时一并删掉。 */
+    private val LEGACY_CHANNEL_IDS = listOf("moonpods_noroot_status", "moonpods_device_status")
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     /** 判定 + 落地整段串行化：并发事件不会交叉出两条状态不一致的通知。 */
@@ -313,6 +316,9 @@ object NorootNotification {
         runCatching {
             // 旧版遗留的空通道（见 LEGACY_ISLAND_CHANNEL_ID）顺手清掉
             runCatching { manager.deleteNotificationChannel(LEGACY_ISLAND_CHANNEL_ID) }
+            LEGACY_CHANNEL_IDS.forEach { id ->
+                runCatching { manager.deleteNotificationChannel(id) }
+            }
             val existing = runCatching { manager.getNotificationChannel(CHANNEL_ID) }.getOrNull()
             if (existing != null && existing.importance != CHANNEL_IMPORTANCE) {
                 Log.i(TAG, "recreate channel $CHANNEL_ID: importance ${existing.importance} -> $CHANNEL_IMPORTANCE")
