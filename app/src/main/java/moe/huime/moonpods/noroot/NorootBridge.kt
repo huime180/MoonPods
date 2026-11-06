@@ -55,6 +55,9 @@ object NorootBridge : PodListener {
             if (moe.huime.moonpods.config.ConfigManager.focusNotification()) {
                 broadcastState(snap)
             }
+        } else {
+            // 进程重启后耳机已不在线：撤掉上一次残留的通知
+            NorootNotification.cancel(context.applicationContext)
         }
     }
 
@@ -224,10 +227,8 @@ object NorootBridge : PodListener {
         }
         _snapshot.value = snap
         if (snap == null) {
-            if (lastBroadcast != null) {
-                lastBroadcast = null
-                broadcastDisconnected()
-            }
+            lastBroadcast = null
+            broadcastDisconnected()
             return
         }
         if (snap == lastBroadcast) {
