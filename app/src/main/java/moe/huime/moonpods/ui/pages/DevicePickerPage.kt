@@ -139,7 +139,8 @@ fun DevicePickerPage(
     val bluetoothEnabled = adapter?.isEnabled == true
     val pairedDevices = remember(hasPermission, bluetoothEnabled, bluetoothRefreshToken) {
         if (!bluetoothEnabled) emptyList() else adapter?.bondedDevices?.toList()?.sortedByDescending {
-            it.name?.contains("oppo", ignoreCase = true) == true
+            // 水月雨设备排前面（OPPO 宽匹配已移除）
+            MoondropModelRegistry.match(it.name ?: it.alias) != null
         } ?: emptyList()
     }
 

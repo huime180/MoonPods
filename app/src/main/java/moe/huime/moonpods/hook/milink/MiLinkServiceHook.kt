@@ -20,7 +20,6 @@ import moe.huime.moonpods.hook.getObjectField
 import moe.huime.moonpods.hook.setObjectField
 import moe.huime.moonpods.pods.PodBrand
 import moe.huime.moonpods.pods.PodCatalog
-import moe.huime.moonpods.pods.RfcommController
 import moe.huime.moonpods.pods.moondrop.AncMode
 import moe.huime.moonpods.utils.miuiStrongToast.data.batteryStatusCompat
 import moe.huime.moonpods.pods.detectDeviceCapabilities
@@ -246,42 +245,8 @@ object MiLinkServiceHook : HookContext() {
                         refreshConfig()
                         notifyHeadsetPropertyChanged(lastAncBatteryController, currentBluetoothDevice(), 10)
                     }
-                    HyperPodsAction.ACTION_PODS_CONNECTED -> {
-                        currentBrand = PodBrand.OPPO
-                        currentAddress = intent.getStringExtra("address") ?: currentAddress
-                        currentName = intent.getStringExtra("device_name") ?: currentName
-                        currentProductId = intent.getStringExtra("product_id") ?: currentProductId
-                        currentAddress?.let { knownAddresses.add(it.uppercase()) }
-                    }
-                    HyperPodsAction.ACTION_PODS_DISCONNECTED -> {
-                        currentAddress = intent.getStringExtra("address") ?: currentAddress
-                        currentProductId = null
-                    }
-                    HyperPodsAction.ACTION_PODS_BATTERY_CHANGED -> {
-                        currentBrand = PodBrand.OPPO
-                        currentAddress = intent.getStringExtra("address") ?: currentAddress
-                        currentBattery = intent.batteryStatusFromExtras() ?: intent.parcelableStatus() ?: currentBattery
-                        currentAddress?.let { knownAddresses.add(it.uppercase()) }
-                        saveState(context)
-                    }
-                    HyperPodsAction.ACTION_PODS_ANC_CHANGED -> {
-                        currentBrand = PodBrand.OPPO
-                        currentAddress = intent.getStringExtra("address") ?: currentAddress
-                        currentAnc = intent.getIntExtra("status", currentAnc)
-                        currentAddress?.let { knownAddresses.add(it.uppercase()) }
-                        saveState(context)
-                    }
-                    HyperPodsAction.ACTION_PODS_GAME_MODE_CHANGED -> {
-                        currentBrand = PodBrand.OPPO
-                        currentAddress = intent.getStringExtra("address") ?: currentAddress
-                        currentGameMode = intent.getBooleanExtra("enabled", currentGameMode)
-                        currentAddress?.let { knownAddresses.add(it.uppercase()) }
-                        saveState(context)
-                        notifyHeadsetPropertyChanged(lastAncBatteryController, currentBluetoothDevice(), 10)
-                    }
                     // ---- 水月雨线 ----
-                    // 状态字段与 OPPO 侧共用（融合设备中心只认这一份），
-                    // 所以水月雨的档位要先翻译成 HyperOS 那套 1/2/3/4 语义。
+                    // 融合设备中心只认 HyperOS 那套 1/2/3/4 语义，所以水月雨的档位要先翻译。
                     HyperPodsAction.PODS_CONNECTED -> {
                         currentBrand = PodBrand.MOONDROP
                         currentAddress = intent.getStringExtra(HyperPodsAction.EXTRA_MAC) ?: currentAddress
@@ -308,14 +273,6 @@ object MiLinkServiceHook : HookContext() {
                         notifyHeadsetPropertyChanged(lastAncBatteryController, currentBluetoothDevice(), 10)
                     }
 
-                    HyperPodsAction.ACTION_PODS_SPATIAL_AUDIO_CHANGED -> {
-                        currentBrand = PodBrand.OPPO
-                        currentAddress = intent.getStringExtra("address") ?: currentAddress
-                        currentSpatialAudioMode = intent.getIntExtra("mode", currentSpatialAudioMode)
-                            .coerceIn(ConfigManager.SPATIAL_AUDIO_OFF, ConfigManager.SPATIAL_AUDIO_HEAD_TRACKING)
-                        currentAddress?.let { knownAddresses.add(it.uppercase()) }
-                        saveState(context)
-                    }
                 }
             }
         }, filter, Context.RECEIVER_EXPORTED)
@@ -326,11 +283,12 @@ object MiLinkServiceHook : HookContext() {
         })
     }
 
+    /** 是不是本模块接管的耳机（OPPO 支持已移除，只剩水月雨；名字保留是为减小改动面）。 */
     internal fun isOppoPod(device: BluetoothDevice): Boolean {
         val address = runCatching { device.address }.getOrNull()
         if (address != null && isOppoAddress(address)) return true
         val name = runCatching { device.name ?: device.alias }.getOrNull().orEmpty()
-        val result = name.contains("oppo", ignoreCase = true)
+        val result = PodCatalog.isMoondropName(name)
         if (result && address != null) {
             knownAddresses.add(address.uppercase())
             currentAddress = address
@@ -494,14 +452,7 @@ object MiLinkServiceHook : HookContext() {
     private fun resolveBrand(device: BluetoothDevice): PodBrand? {
         val address = runCatching { device.address }.getOrNull()
         val name = runCatching { device.name ?: device.alias }.getOrNull()
-        context?.let { ctx ->
-            runCatching { PodCatalog.brandOf(ctx, name, address) }.getOrNull()?.let { return it }
-        }
-        return when {
-            PodCatalog.isMoondropName(name) -> PodBrand.MOONDROP
-            PodCatalog.isOppoName(name) -> PodBrand.OPPO
-            else -> null
-        }
+        return PodCatalog.brandOf(name, address)
     }
 
     private fun ensureStateLoaded() {
@@ -774,16 +725,9 @@ object MiLinkServiceHook : HookContext() {
 
     private fun panelCapabilities() = detectDeviceCapabilities(
         context = context,
-        deviceName = backendDeviceName() ?: currentName.orEmpty(),
-        productId = runCatching { RfcommController.currentStatusSnapshot().productId }.getOrNull()
-            ?: currentProductId,
+        deviceName = currentName.orEmpty(),
+        productId = currentProductId,
     )
-
-    private fun backendDeviceName(): String? {
-        return runCatching { RfcommController.currentStatusSnapshot().deviceName }
-            .getOrNull()
-            ?.takeIf { it.isNotBlank() }
-    }
 
     internal fun isTargetAncBatteryModel(model: Any?): Boolean {
         val device = runCatching { callMethod(model, "getBluetoothDevice") as? BluetoothDevice }.getOrNull()

@@ -1,6 +1,8 @@
 package moe.huime.moonpods.pods
 
 import android.content.Context
+import moe.huime.moonpods.pods.moondrop.AncMode
+import moe.huime.moonpods.pods.moondrop.MoondropModelRegistry
 
 data class DeviceCapabilities(
     val adaptiveSupported: Boolean,
@@ -39,29 +41,20 @@ object EqDefaults {
 }
 
 fun detectDeviceCapabilities(
-    context: Context? = null,
+    @Suppress("UNUSED_PARAMETER") context: Context? = null,
     deviceName: String,
-    productId: String? = null,
+    @Suppress("UNUSED_PARAMETER") productId: String? = null,
 ): DeviceCapabilities {
-    val detected = context?.let {
-        DeviceModelRegistry.byProductId(it, productId)
-            ?: DeviceModelRegistry.byDeviceName(it, deviceName)
-    }
+    // OPPO 的 device_models.json 白名单已随 OPPO 支持一起移除：现在能力只从水月雨型号档案推导。
+    // 空间音频/游戏模式在水月雨协议里没有对应命令，恒为 false（UI 据此隐藏对应卡片）。
+    val model = runCatching { MoondropModelRegistry.match(deviceName) }.getOrNull()
+    val modes = model?.anc?.modes.orEmpty()
     return DeviceCapabilities(
-        adaptiveSupported = detected?.adaptiveSupported == true,
-        spatialAudioSupported = detected?.spatialAudioSupported == true,
-        spatialSoundSwitchSupported = detected?.spatialSoundSwitchSupported == true,
-        ancImplementation = if (detected?.legacyAnc == true) {
-            AncImplementation.COMPATIBLE
-        } else {
-            AncImplementation.STANDARD
-        },
-        dualDeviceSupported = detected?.dualDeviceSupported == true,
-        customEqSupported = detected?.customEqSupported == true,
-        eqPresets = detected?.eqPresets.orEmpty(),
-        customEqFrequencies = detected?.customEqFrequencies.orEmpty(),
-        customEqMaxPresets = detected?.customEqMaxPresets ?: 0,
-        gameModeFeatureId = detected?.gameModeFeatureId ?: GameModeFeature.LOW_LATENCY,
-        gameModeSupported = detected?.gameModeSupported == true,
+        adaptiveSupported = modes.any { it.id == AncMode.ADAPTIVE.id },
+        spatialAudioSupported = false,
+        spatialSoundSwitchSupported = false,
+        ancImplementation = AncImplementation.STANDARD,
+        dualDeviceSupported = model?.features?.dualConnection == true,
+        gameModeSupported = false,
     )
 }

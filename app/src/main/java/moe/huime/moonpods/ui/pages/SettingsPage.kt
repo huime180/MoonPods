@@ -48,7 +48,6 @@ fun SettingsPage(
     onMoreClickActionChange: (Int) -> Unit = {},
     onOpenTheme: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
-    onOpenOppoOnly: () -> Unit = {}
 ) {
     val languageOptions = listOf(
         stringResource(R.string.language_system),
@@ -126,22 +125,6 @@ fun SettingsPage(
                     title = stringResource(R.string.theme_title),
                     summary = stringResource(R.string.theme_color_summary),
                     onClick = onOpenTheme,
-                    endActions = {
-                        Icon(
-                            imageVector = MiuixIcons.Basic.ArrowRight,
-                            contentDescription = null,
-                        )
-                    },
-                )
-            }
-        }
-
-        item {
-            Card(modifier = Modifier.padding(top = 12.dp)) {
-                BasicComponent(
-                    title = "OPPO 专属设置",
-                    summary = "仅对 OPPO / 一加耳机生效",
-                    onClick = onOpenOppoOnly,
                     endActions = {
                         Icon(
                             imageVector = MiuixIcons.Basic.ArrowRight,

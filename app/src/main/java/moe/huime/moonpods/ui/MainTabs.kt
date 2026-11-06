@@ -131,7 +131,6 @@ internal fun MainTabsScaffold(
     onOpenRfcommDebug: () -> Unit,
     onOpenTheme: () -> Unit,
     onOpenAbout: () -> Unit,
-    onOpenOppoOnly: () -> Unit,
     showRestartScopeDialog: Boolean,
     restartingScopes: Boolean,
     onShowRestartScopeDialog: () -> Unit,
@@ -284,7 +283,6 @@ internal fun MainTabsScaffold(
                         onMoreClickActionChange = onMoreClickActionChange,
                         onOpenTheme = onOpenTheme,
                         onOpenAbout = onOpenAbout,
-                        onOpenOppoOnly = onOpenOppoOnly,
                     )
                 }
             }
@@ -536,7 +534,6 @@ private fun SettingsTabPage(
     onMoreClickActionChange: (Int) -> Unit,
     onOpenTheme: () -> Unit,
     onOpenAbout: () -> Unit,
-    onOpenOppoOnly: () -> Unit,
 ) {
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
     Scaffold(
@@ -574,7 +571,6 @@ private fun SettingsTabPage(
             onMoreClickActionChange = onMoreClickActionChange,
             onOpenTheme = onOpenTheme,
             onOpenAbout = onOpenAbout,
-            onOpenOppoOnly = onOpenOppoOnly,
         )
     }
 }

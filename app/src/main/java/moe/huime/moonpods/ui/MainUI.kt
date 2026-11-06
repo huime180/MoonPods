@@ -62,7 +62,6 @@ import moe.huime.moonpods.pods.WearStatus
 import moe.huime.moonpods.pods.detectDeviceCapabilities
 import moe.huime.moonpods.ui.pages.AboutPage
 import moe.huime.moonpods.ui.pages.EqualizerPage
-import moe.huime.moonpods.ui.pages.OppoOnlySettingsPage
 import moe.huime.moonpods.ui.pages.RfcommDebugPage
 import moe.huime.moonpods.ui.pages.ThemeSettingsPage
 import moe.huime.moonpods.utils.MoondropImageAutoImport
@@ -99,7 +98,6 @@ sealed interface Screen : NavKey {
     data object Main : Screen
     data object About : Screen
     data object Theme : Screen
-    data object OppoOnly : Screen
     data object Equalizer : Screen
     data object RfcommDebug : Screen
     data object Gesture : Screen
@@ -937,22 +935,6 @@ fun MainUI(
         }
     }
 
-    val handleAutoGameModeChange: (Boolean) -> Unit = { enabled ->
-        autoGameMode.value = enabled
-        ConfigManager.updateAutoGameMode(prefs, xposedService, enabled)
-        Intent(HyperPodsAction.ACTION_AUTO_GAME_MODE_CHANGED).apply {
-            setPackage("com.android.bluetooth")
-            putExtra("enabled", enabled)
-            addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
-            context.sendBroadcast(this)
-        }
-    }
-    val handleMilinkCardFeaturesChange: (Set<Int>) -> Unit = { features ->
-        milinkCardFeatures.value = features
-        ConfigManager.updateMilinkCardFeatures(prefs, xposedService, features)
-        broadcastConfigChanged(context, "com.milink.service")
-    }
-
     val entryProvider = entryProvider<Screen> {
         entry<Screen.Main> {
             MainTabsScaffold(
@@ -1051,7 +1033,6 @@ fun MainUI(
                 onOpenRfcommDebug = { backStack.add(Screen.RfcommDebug) },
                 onOpenTheme = { backStack.add(Screen.Theme) },
                 onOpenAbout = { backStack.add(Screen.About) },
-                onOpenOppoOnly = { backStack.add(Screen.OppoOnly) },
                 showRestartScopeDialog = showRestartScopeDialog,
                 restartingScopes = restartingScopes,
                 onShowRestartScopeDialog = { showRestartScopeDialog = true },
@@ -1165,42 +1146,6 @@ fun MainUI(
                         onFloatingBottomBarChange = onFloatingBottomBarChange,
                         blurBottomBar = blurBottomBar,
                         onBlurBottomBarChange = onBlurBottomBarChange,
-                    )
-                }
-            }
-        }
-        entry<Screen.OppoOnly> {
-            val oppoOnlyScrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
-
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = "OPPO 专属设置",
-                        largeTitle = "OPPO 专属设置",
-                        scrollBehavior = oppoOnlyScrollBehavior,
-                        navigationIcon = {
-                            IconButton(onClick = { backStack.removeLast() }) {
-                                Icon(imageVector = MiuixIcons.Back, contentDescription = "Back")
-                            }
-                        }
-                    )
-                }
-            ) { padding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                        .padding(padding),
-                ) {
-                    OppoOnlySettingsPage(
-                        modifier = Modifier
-                            .overScrollVertical()
-                            .nestedScroll(oppoOnlyScrollBehavior.nestedScrollConnection),
-                        contentPadding = PaddingValues(bottom = pageBottomContentPadding),
-                        autoGameMode = autoGameMode,
-                        onAutoGameModeChange = handleAutoGameModeChange,
-                        milinkCardFeatures = milinkCardFeatures,
-                        onMilinkCardFeaturesChange = handleMilinkCardFeaturesChange,
                     )
                 }
             }

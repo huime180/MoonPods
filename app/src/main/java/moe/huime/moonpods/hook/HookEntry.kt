@@ -19,14 +19,12 @@ class HookEntry : XposedModule() {
         when (param.packageName) {
             "com.android.bluetooth" -> {
                 loadHook(HeadsetStateDispatcher, param.defaultClassLoader, param.packageName)
-                loadHook(BluetoothUpstreamHeadsetHook(), param.defaultClassLoader, param.packageName)
             }
             // 设置进程（com.android.settings）不在作用域里：历史上那套设置页伪装已整体回退，
             // 分发与实现文件都已删除，不要再按「设置页被接管」理解本模块。
             "com.milink.service" -> loadHook(MiLinkServiceHook, param.defaultClassLoader, param.packageName)
             "com.xiaomi.bluetooth" -> {
                 loadHook(MiBluetoothToastHook, param.defaultClassLoader, param.packageName)
-                loadHook(BluetoothUpstreamHeadsetHook(), param.defaultClassLoader, param.packageName)
             }
         }
     }

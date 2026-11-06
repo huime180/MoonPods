@@ -25,7 +25,6 @@ import moe.huime.moonpods.utils.miuiStrongToast.data.BatteryParams
 import moe.huime.moonpods.utils.miuiStrongToast.data.batteryStatusCompat
 import moe.huime.moonpods.utils.miuiStrongToast.data.HyperPodsAction
 import moe.huime.moonpods.R
-import moe.huime.moonpods.pods.RfcommController
 import moe.huime.moonpods.pods.detectDeviceCapabilities
 import moe.huime.moonpods.utils.miuiStrongToast.MiuiStrongToastUtil
 
@@ -33,7 +32,7 @@ import moe.huime.moonpods.utils.miuiStrongToast.MiuiStrongToastUtil
 object MiBluetoothToastHook : HookContext() {
 
     // ANC 模式本地缓存，用于循环切换和状态同步（1=关 2=降噪 3=通透 4=自适应）
-    // 通过接收 ACTION_PODS_ANC_CHANGED 广播与 RfcommController 保持同步
+    // 通过接收 ACTION_PODS_ANC_CHANGED 广播与控制器保持同步
     private var localAncMode = 1
     private var notificationReceiverRegistered = false
     private var lastOfficialIslandShape: Triple<Boolean, Boolean, Boolean>? = null
@@ -336,12 +335,10 @@ object MiBluetoothToastHook : HookContext() {
                                 // 同步耳机实际 ANC 状态到本地缓存，确保下次循环切换时状态准确
                                 localAncMode = p1.getIntExtra("status", 1)
                             } else if (p1?.action == HyperPodsAction.ACTION_CYCLE_ANC) {
-                                val snapshot = runCatching { RfcommController.currentStatusSnapshot() }.getOrNull()
+                                // OPPO 的 RFCOMM 快照已移除：设备名直接取广播里的 EXTRA
                                 val capabilities = detectDeviceCapabilities(
                                     context = p0,
-                                    deviceName = snapshot?.deviceName
-                                        ?: p1.getStringExtra("device_name").orEmpty(),
-                                    productId = snapshot?.productId,
+                                    deviceName = p1.getStringExtra("device_name").orEmpty(),
                                 )
                                 val cycle = if (capabilities.adaptiveSupported) {
                                     listOf(2, 4, 3, 1)
