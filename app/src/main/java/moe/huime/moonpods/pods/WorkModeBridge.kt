@@ -18,6 +18,10 @@ object WorkModeBridge {
 
     fun mode(): Int {
         if (override != UNSET) return override
+        // 优先读文件：remote prefs 会滞后，文件是实时权威值
+        moe.huime.moonpods.config.ModeFile.readByPath(
+            moe.huime.moonpods.config.ModeFile.candidatePaths("moe.huime.moonpods")
+        )?.let { return it }
         // 被注入进程的 remote prefs 可能滞后：每次判断前重读一次
         ConfigManager.refreshNow()
         return ConfigManager.workMode()

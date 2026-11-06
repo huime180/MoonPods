@@ -11,6 +11,8 @@ class MoonPodsApp : Application(), XposedServiceHelper.OnServiceListener {
     override fun onCreate() {
         super.onCreate()
         XposedServiceHelper.registerListener(this)
+        // 把当前模式落到权威文件：被注入进程读文件而不是滞后的 remote prefs
+        runCatching { moe.huime.moonpods.config.ModeFile.write(this, ConfigManager.workMode()) }
         // A2DP 自动接管：耳机连上就接管。两种模式共用，且不依赖 hook 是否安装成功
         //（进程重启、作用域未刷新时 hook 可能缺席，这里是兜底入口）。
         runCatching {

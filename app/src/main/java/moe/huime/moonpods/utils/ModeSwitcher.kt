@@ -48,6 +48,8 @@ object ModeSwitcher {
                 addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             })
         }
+        // 先写权威文件：被注入进程直接读它，不依赖 prefs 同步
+        runCatching { moe.huime.moonpods.config.ModeFile.write(app, mode) }
         // 3) 持久化 + 通知各注入进程
         runCatching {
             ConfigManager.updateWorkMode(
