@@ -851,7 +851,17 @@ object MoondropController {
         var cmd = MoondropGaia.C_BASIC_GET_SUPPORTED_FEATURES
         var guard = 0
         while (guard++ < 4) {
-            val p = request(MoondropGaia.command(MoondropGaia.F_BASIC, cmd), ANC_TIMEOUT_MS) ?: break
+            // 分页请求可能偶发失败：重试两次再放弃，否则能力集合会只剩第一页
+            // （表现就是 LHDC/双设备/提示音/手势全都不显示）
+            var p = request(MoondropGaia.command(MoondropGaia.F_BASIC, cmd), ANC_TIMEOUT_MS)
+            var retry = 0
+            while (p == null && retry++ < 2) {
+                p = request(MoondropGaia.command(MoondropGaia.F_BASIC, cmd), ANC_TIMEOUT_MS)
+            }
+            if (p == null) {
+                Log.w(TAG, "supported features page missing (cmd=$cmd), keeping ${feats.size} entries")
+                break
+            }
             // 实测格式（Pudding 真机，官方 App logcat）：
             //   payload = [moreFlag:1][featureId:1][version:1]...
             //   例：00 | 00 02 | 01 01 | 05 01 | 0D 01 | 0E 01 | 0F 01 | 10 01 | 13 01 | 14 01 | 16 01 | 20 01
@@ -870,6 +880,7 @@ object MoondropController {
             }
         }
 
+        Log.i(TAG, "supported features: " + feats.sorted().joinToString())
         // 设备上报的电池类型（修复「右耳不显示」的第一步）
         val supported = request(MoondropGaia.batteryGetAllV4(), ANC_TIMEOUT_MS)?.let { MoondropBatteryCodec.parseSupported(it) }
 
