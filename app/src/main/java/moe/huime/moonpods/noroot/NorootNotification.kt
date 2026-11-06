@@ -26,19 +26,6 @@ object NorootNotification {
     private const val CHANNEL_ID = "moonpods_device_status"
     private const val NOTIFICATION_ID = 10005
 
-    /**
-     * 通知里的降噪三态：与 HyperOS 的 关 / 降噪 / 通透 一一对应。
-     *
-     * 族归属按设备上报的 id 判定：降噪族含 anc / anti_wind / adaptive，
-     * 通透族含 transparent / live —— 与耳机页的家族口径一致。
-     */
-    private data class AncAction(val labelRes: Int, val ids: Set<String>)
-
-    private val ANC_ACTIONS = listOf(
-        AncAction(R.string.noroot_action_anc_off, setOf("off")),
-        AncAction(R.string.noroot_action_anc_on, setOf("anc", "anti_wind", "adaptive")),
-        AncAction(R.string.noroot_action_anc_transparency, setOf("transparent", "live")),
-    )
 
     fun channel(ctx: Context) {
         val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
@@ -63,12 +50,23 @@ object NorootNotification {
         val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
 
         val battery = snap.battery
-        val parts = buildList {
-            if (battery.leftKnown) add("L ${battery.left}%")
-            if (battery.rightKnown) add("R ${battery.right}%")
-            if (battery.caseKnown) add("C ${battery.case}%")
-        }
-        val text = parts.joinToString(" · ").ifEmpty { ctx.getString(R.string.noroot_connected) }
+        // 与 Root 模式（MiBluetoothToastHook）保持同一套文案：盒/左/右 + 充电符号，
+        // 盒子单独一行、左右在同一行。两个模式只差通知通道，内容一致。
+        val caseText = if (battery.caseKnown) {
+            "${ctx.getString(R.string.noroot_label_case)}${battery.case}%" +
+                (if (battery.caseCharging) "⚡ " else " ") + "\n"
+        } else ""
+        val leftText = if (battery.leftKnown) {
+            "${ctx.getString(R.string.noroot_label_left)}${battery.left}%" +
+                (if (battery.leftCharging) "⚡" else "")
+        } else ""
+        val bothKnown = battery.leftKnown && battery.rightKnown
+        val rightText = if (battery.rightKnown) {
+            "${if (bothKnown) " " else ""}${ctx.getString(R.string.noroot_label_right)}${battery.right}%" +
+                (if (battery.rightCharging) "⚡ " else " ")
+        } else ""
+        val text = (caseText + leftText + rightText).trimEnd()
+            .ifEmpty { ctx.getString(R.string.noroot_connected) }
 
         val openIntent = PendingIntent.getActivity(
             ctx,
@@ -85,25 +83,7 @@ object NorootNotification {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
 
-        // 降噪三态快捷切换：仅在设备上报的档位表里存在对应家族时出现
-        ANC_ACTIONS.forEachIndexed { i, action ->
-            val target = snap.ancModes.indexOfFirst { it.id in action.ids }
-            if (target < 0) return@forEachIndexed
-            builder.addAction(
-                Notification.Action.Builder(
-                    null,
-                    ctx.getString(action.labelRes),
-                    PendingIntent.getBroadcast(
-                        ctx,
-                        10 + i,
-                        Intent(MoonPodsAction.ANC_SELECT)
-                            .setPackage(BuildConfig.APPLICATION_ID)
-                            .putExtra(MoonPodsAction.EXTRA_STATUS, target),
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                    ),
-                ).build()
-            )
-        }
+        // 与 Root 模式一致：只保留「断开连接」一个动作（降噪在耳机页/控制中心操作）
         builder.addAction(
             Notification.Action.Builder(
                 null,

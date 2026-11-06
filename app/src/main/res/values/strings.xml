@@ -123,6 +123,9 @@
     <string name="noroot_action_anc_on">Noise cancelling</string>
     <string name="noroot_action_anc_transparency">Transparency</string>
     <string name="noroot_action_disconnect">Disconnect</string>
+    <string name="noroot_label_case">Case </string>
+    <string name="noroot_label_left">Left </string>
+    <string name="noroot_label_right">Right </string>
     <string name="noroot_channel_name">Earbuds status</string>
     <string name="work_mode">Work mode</string>\n    <string name="work_mode_summary">Root: hook MIUI system apps for a native-like experience\nNo root: the app connects the earbuds itself (own notification)</string>\n    <string name="work_mode_root">Root (hook)</string>\n    <string name="work_mode_noroot">No root</string>\n    <string name="focus_notification">Focus notification</string>
     <string name="focus_notification_summary">Create the earphone notification; turn off to hide it completely</string>
